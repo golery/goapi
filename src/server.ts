@@ -1,6 +1,7 @@
 import errorHandler from "errorhandler";
 import app from "./app";
 
+console.log("Starting...");
 
 /**
  * Error Handler. Provides full stack

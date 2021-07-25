@@ -1,20 +1,13 @@
 import express from "express";
-import compression from "compression";  // compresses requests
-import session from "express-session";
+import compression from "compression"; // compresses requests
 import bodyParser from "body-parser";
-import lusca from "lusca";
-import MongoStore from "connect-mongo";
-import flash from "express-flash";
 import path from "path";
-import mongoose from "mongoose";
-import passport from "passport";
-import bluebird from "bluebird";
-import { MONGODB_URI, SESSION_SECRET } from "./util/secrets";
+import cors from "cors";
 
 // Controllers (route handlers)
 // import * as homeController from "./controllers/home";
 // import * as userController from "./controllers/user";
-// import * as apiController from "./controllers/api";
+import * as apiController from "./controllers/api";
 // import * as contactController from "./controllers/contact";
 
 // API keys and Passport configuration
@@ -27,21 +20,31 @@ const app = express();
 // ...
 
 // Express configuration
-app.set("port", process.env.PORT || 3000);
-app.set("views", path.join(__dirname, "../views"));
-app.set("view engine", "pug");
+app.set("port", process.env.PORT || 8200);
+app.use(cors());
+
+function errorHandler(err: any, req: any, res: any, next: any) {
+    if (res.headersSent) {
+        return next(err);
+    }
+    res.status(500);
+    res.render("error", {error: err});
+}
+
+
 app.use(compression());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 // app.use(passport.initialize());
 // app.use(passport.session());
-app.use(flash());
-app.use(lusca.xframe("SAMEORIGIN"));
-app.use(lusca.xssProtection(true));
+// app.use(flash());
+// app.use(lusca.xframe("SAMEORIGIN"));
+// app.use(lusca.xssProtection(true));
 app.use((req, res, next) => {
     res.locals.user = req.user;
     next();
 });
+
 // app.use((req, res, next) => {
 //     // After successful login, redirect back to the intended page
 //     if (!req.user &&
@@ -58,7 +61,7 @@ app.use((req, res, next) => {
 // });
 
 app.use(
-    express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
+    express.static(path.join(__dirname, "public"), {maxAge: 31557600000})
 );
 
 /**
@@ -85,7 +88,13 @@ app.use(
 /**
  * API examples routes.
  */
-// app.get("/api", apiController.getApi);
+app.use("/api2", apiController.getRoute());
+app.use("/", (req, res) => {
+    res.send("ping");
+});
+
+// app.use(errorHandler);
+
 // app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
 
 /**
