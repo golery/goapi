@@ -20,7 +20,7 @@ const upload = multer({
  */
 export const getRoute = (): Router => {
     const router = express.Router();
-    router.post("/file/:app", upload.single("file"), async (req, res) => {
+    router.post("/file/:app", upload.single("file"), apiHandler(async (req, res) => {
         const file = (req as any).file;
         const uploadParams = {
             app: req.params.app,
@@ -30,11 +30,15 @@ export const getRoute = (): Router => {
         };
         const response = await services().imageService.upload(uploadParams);
         res.send({...response, data: undefined});
-    });
+    }));
 
     router.get("/file/:id",
         apiHandler(async (req, res) => {
-            const {data, contentType} = await services().imageService.download(req.params.id);
+            const response = await services().imageService.download(req.params.id);
+            if (!response) {
+                res.status(404).send("S3 key not found");
+            }
+            const {data, contentType} = response;
             res.contentType(contentType);
             (data as any).pipe(res);
             logger.info("Downloaded");

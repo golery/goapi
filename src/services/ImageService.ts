@@ -3,6 +3,7 @@ import {v4 as uuidv4} from "uuid";
 import path from "path";
 import {GetObjectCommand, GetObjectCommandOutput, PutObjectCommand, PutObjectCommandInput} from "@aws-sdk/client-s3";
 import logger from "../util/logger";
+import mime from "mime-types";
 
 export interface ImageUploadRequest {
     app: string
@@ -12,9 +13,11 @@ export interface ImageUploadRequest {
 }
 
 export class ImageService {
+
+
     async upload(request: ImageUploadRequest) {
         const id = uuidv4();
-        const ext = path.extname(request.fileName) || "";
+        const ext = path.extname(request.fileName) || mime.extension(request.mime) || "";
         const config = services().config.get();
         const s3Client = services().amazonService.getS3Client();
 
@@ -36,7 +39,11 @@ export class ImageService {
             Bucket: config.s3Bucket,
             Key: id,
         };
-        const data: GetObjectCommandOutput = await s3Client.send(new GetObjectCommand(bucketParams));
-        return {data: data.Body, contentType: data.ContentType};
+        try {
+            const data: GetObjectCommandOutput = await s3Client.send(new GetObjectCommand(bucketParams));
+            return {data: data.Body, contentType: data.ContentType};
+        } catch (e) {
+            logger.warn(`S3 Key not found ${id}`);
+        }
     }
 }
