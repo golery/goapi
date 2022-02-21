@@ -1,13 +1,13 @@
-import express from "express";
-import compression from "compression"; // compresses requests
-import bodyParser from "body-parser";
-import path from "path";
-import cors from "cors";
+import express from 'express';
+import compression from 'compression'; // compresses requests
+import bodyParser from 'body-parser';
+import path from 'path';
+import cors from 'cors';
 
 // Controllers (route handlers)
 // import * as homeController from "./controllers/home";
 // import * as userController from "./controllers/user";
-import * as apiController from "./controllers/api";
+import * as apiController from './controllers/api';
 // import * as contactController from "./controllers/contact";
 
 // API keys and Passport configuration
@@ -20,7 +20,7 @@ const app = express();
 // ...
 
 // Express configuration
-app.set("port", process.env.PORT || 8200);
+app.set('port', process.env.PORT || 8200);
 app.use(cors());
 
 function errorHandler(err: any, req: any, res: any, next: any) {
@@ -28,7 +28,7 @@ function errorHandler(err: any, req: any, res: any, next: any) {
         return next(err);
     }
     res.status(500);
-    res.render("error", {error: err});
+    res.render('error', {error: err});
 }
 
 
@@ -61,7 +61,7 @@ app.use((req, res, next) => {
 // });
 
 app.use(
-    express.static(path.join(__dirname, "public"), {maxAge: 31557600000})
+    express.static(path.join(__dirname, 'public'), {maxAge: 31557600000})
 );
 
 /**
@@ -88,9 +88,9 @@ app.use(
 /**
  * API examples routes.
  */
-app.use("/api2", apiController.getRoute());
-app.use("/", (req, res) => {
-    res.send("ping");
+app.use('/api2', apiController.getRoute());
+app.use('/', (req, res) => {
+    res.send('ping');
 });
 
 // app.use(errorHandler);

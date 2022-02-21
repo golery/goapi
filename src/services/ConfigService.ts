@@ -1,6 +1,6 @@
-import logger from "../util/logger";
-import * as fs from "fs";
-import YAML from "yaml";
+import logger from '../util/logger';
+import * as fs from 'fs';
+import YAML from 'yaml';
 
 interface Config {
     s3Bucket: string;
@@ -11,9 +11,9 @@ interface Config {
 let config: Config;
 
 function loadConfig(): Config {
-    const isProd = () => process.env.NODE_ENV === "production";
-    const path = isProd() ? "/data/app-configs/prod/goapi2/config.yml" : "/data/app-configs/dev/goapi2/config.yml";
-    const configYml = fs.readFileSync(path, "utf8") as string;
+    const isProd = () => process.env.NODE_ENV === 'production';
+    const path = isProd() ? '/data/app-configs/prod/goapi2/config.yml' : '/data/app-configs/dev/goapi2/config.yml';
+    const configYml = fs.readFileSync(path, 'utf8') as string;
     const config = YAML.parse(configYml) as Config;
     logger.info(`Loaded config file ${path} NODE_ENV=${process.env.NODE_ENV}`);
 

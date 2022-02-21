@@ -1,5 +1,5 @@
-import express from "express";
-import logger from "./logger";
+import express from 'express';
+import logger from './logger';
 
 // express js 4 handles exception for only synchronous handler
 // for async, need to explicitly call next(error), otherwise app crashes.

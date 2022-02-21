@@ -1,6 +1,6 @@
-import {S3Client} from "@aws-sdk/client-s3";
+import {S3Client} from '@aws-sdk/client-s3';
 // https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/welcome.html
-const REGION = "us-east-1";
+const REGION = 'us-east-1';
 
 export class AmazonService {
     getS3Client() {

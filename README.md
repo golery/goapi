@@ -20,10 +20,12 @@ in side container, to get only new log: pm2 log (but don't see history log)
 npm run start
 
 # DEV
+# Dev DB
+Ref. /work/app-configs/dev/goapi2/config.yml
+
 # Run below to setup aws credentials
 . /work/app-configs/dev/goapi2/env.sh
-npm watch-node
-npm watch-ts
+npm dev  (start using ts-node)
 Access: http://localhost:8200
 
 # REFERENCES
