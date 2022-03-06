@@ -5,28 +5,20 @@ It's completely written in nodejs + typescript + expressjs
 # URL:
 localhost:5000/api2/image/imgur
 
-# PRODUCTION
+# RELEASE
 At local:
 ./script/build-image.sh
 ./script/push-image.sh
-On server:
-docker pull golery/goapi2
-Troubleshoot
-/data/app-configs/scripts/run-goapi2.sh
-docker logs -f goapi2  # pm2-runtime is used which log directly to console.
-in side container, to get only new log: pm2 log (but don't see history log)
+Test image at local by
+./script/run-image.sh
 
-# PRODUCTION TROUBESHOOT
-npm run start
+# DEPLOY to KOYEB
+Deployed to https://app.koyeb.com
+Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker configuration
+
+# CONFIGURATION / SECRET
+- Dev: ConfigService loads configs and secrets from /data/app-configs/goapi2/dev/config.yml'
+- Prod: they are loaded from docker environment variables/
 
 # DEV
-# Dev DB
-Ref. /work/app-configs/dev/goapi2/config.yml
-
-# Run below to setup aws credentials
-. /work/app-configs/dev/goapi2/env.sh
-npm dev  (start using ts-node)
 Access: http://localhost:8200
-
-# REFERENCES
-- For app framework https://github.com/microsoft/TypeScript-Node-Starter

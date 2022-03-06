@@ -6,4 +6,4 @@
 # Dev: docker run --name goapi2  -p 8200:8200 -v /data:/data -it --rm golery/goapi2 /bin/ash
 
 docker stop goapi2 || true && docker rm goapi2 || true
-docker run --name goapi2 -p 8200:8200 -v /data:/data -it --rm golery/goapi2 $1 $2 $3
+docker run --name goapi2 -p 8200:8200 -it --rm --env-file /work/app-configs/goapi2/dev/env.sh golery/goapi2  $1 $2 $3

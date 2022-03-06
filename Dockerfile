@@ -1,4 +1,4 @@
-FROM node:14.17.4-alpine
+FROM node:14.17.4-alpine as builder
 RUN npm install -g pm2 sass typescript
 
 WORKDIR /app/goapi2

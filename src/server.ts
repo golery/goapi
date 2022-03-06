@@ -1,4 +1,3 @@
-import './util/secrets';
 import errorHandler from 'errorhandler';
 import app from './app';
 

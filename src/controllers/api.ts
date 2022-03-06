@@ -41,8 +41,12 @@ export const getRoute = (): Router => {
             (data as any).pipe(res);
             logger.info('Downloaded');
         }));
-    return router;
 
+    router.get('/pencil/books',
+        apiHandler(async (req, res) => {
+            res.json('test2');
+        }));
+    return router;
 };
 //
 //
