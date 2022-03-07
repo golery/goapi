@@ -42,29 +42,10 @@ export const getRoute = (): Router => {
             logger.info('Downloaded');
         }));
 
-    router.get('/pencil/books',
+    router.get('/pencil/book',
         apiHandler(async (req, res) => {
-            res.json('test2');
+            const books = await services().pencilService.getBooks();
+            res.json(books);
         }));
     return router;
 };
-//
-//
-// /**
-//  * Facebook API example.
-//  * @route GET /api/facebook
-//  */
-// export const getFacebook = (req: Request, res: Response, next: NextFunction) => {
-//     const user = req.user as UserDocument;
-//     const token = user.tokens.find((token: any) => token.kind === "facebook");
-//     graph.setAccessToken(token.accessToken);
-//     graph.get(`${user.facebook}?fields=id,name,email,first_name,last_name,gender,link,locale,timezone`, (err: Error, results: graph.FacebookUser) => {
-//         if (err) {
-//             return next(err);
-//         }
-//         res.render("api/facebook", {
-//             title: "Facebook API",
-//             profile: results
-//         });
-//     });
-// };

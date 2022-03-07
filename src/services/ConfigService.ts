@@ -15,7 +15,7 @@ function loadConfig(): Config {
     const isProd = () => process.env.NODE_ENV === 'production';
 
     if (!isProd()) {
-        const dotEnvPath = '/work/app-configs/dev/goapi2/env.sh';
+        const dotEnvPath = '/work/app-configs/goapi2/dev/env.sh';
         logger.info(`Load config from ${dotEnvPath}`);
         const result = dotenv.config({ path: dotEnvPath });
         if (result.error) {
