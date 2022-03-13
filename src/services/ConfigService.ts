@@ -16,10 +16,12 @@ function loadConfig(): Config {
 
     if (!isProd()) {
         const dotEnvPath = '/work/app-configs/goapi2/dev/env.sh';
-        logger.info(`Load config from ${dotEnvPath}`);
-        const result = dotenv.config({ path: dotEnvPath });
-        if (result.error) {
-            logger.error(`Fail to load config from file ${dotEnvPath}`);
+        if (fs.existsSync(dotEnvPath)) {
+            logger.info(`Load config from ${dotEnvPath}`);
+            const result = dotenv.config({path: dotEnvPath});
+            if (result.error) {
+                logger.error(`Fail to load config from file ${dotEnvPath}`);
+            }
         }
     }
 
