@@ -33,18 +33,18 @@ export class PencilService {
         const {bookId} = await connection.createQueryBuilder().select('max(id)+1', 'bookId').from('space', 'space').getRawOne();
         const nodeRepo = getRepository(Node);
         const node = await nodeRepo.save({
+            id: nodeId,
             app: APP_PENCIL,
             bookId,
-            id: nodeId,
+
             name: request.name,
             title: request.name,
             userId: USER_ID,
-
         });
         const bookRepo = getRepository(Book);
         const book = await bookRepo.save({
-            code: request.code,
             id: bookId,
+            code: request.code,
             rootId: node.id,
             name: request.name,
         });
