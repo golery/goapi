@@ -17,6 +17,10 @@ export class Node {
     createTime: Date;
     @Column()
     updateTime: Date;
+    @Column()
     space?: number;
+    @Column()
     text: string;
+    @Column({name: 'space'})
+    bookId: number;
 }

@@ -1,5 +1,6 @@
-import {node, PrismaClient, space} from '@prisma/client';
-import {getConnection, getRepository} from 'typeorm';
+import {node, PrismaClient} from '@prisma/client';
+import * as typeorm from 'typeorm';
+import {getRepository} from 'typeorm';
 import {Book} from '../entity/Book';
 import {Node} from '../entity/Node';
 
@@ -19,7 +20,7 @@ export class PencilService {
 
     async getBook(bookId: number) {
         const nodeRepo = getRepository(Node);
-        return await nodeRepo.find({where: {app: 1}});
+        return await nodeRepo.find({where: {app: 1, bookId}});
     }
 
     async createSpace(request: CreateSpaceRequest) {
