@@ -22,3 +22,9 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 
 # DEV
 Access: http://localhost:8200
+
+# TSCONFIG
+
+1. The following are for typeorm
+"emitDecoratorMetadata": true,
+"experimentalDecorators": true,

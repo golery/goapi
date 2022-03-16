@@ -29,29 +29,24 @@ model key_value {
 }
 
 model node {
-  id          BigInt    @id
+  id          Int    @id  @default(autoincrement())
   app         Int
   name        String?   @db.VarChar(1024)
   title       String?   @db.VarChar(4096)
   html        String?   @db.VarChar(102400)
-  parent_id   BigInt?
+  parentId   Int?       @map("parent_id")
   children    String?   @db.VarChar(4096)
-  user_id     String    @db.VarChar(128)
+  userId     String    @map("user_id") @db.VarChar(128)
   access      Int       @default(0)
   type        String?   @db.VarChar(64)
   data        String?   @db.VarChar(102400)
   has_title   Boolean   @default(false)
   alias_id    String?   @unique @db.VarChar(512)
-  create_time DateTime  @db.Timestamptz(6)
-  update_time DateTime? @db.Timestamptz(6)
+  createTime DateTime  @db.Timestamptz(6) @default(now())
+  updateTime DateTime? @db.Timestamptz(6) @updatedAt @map("update_time")
   version     Int       @default(0)
-  space       BigInt?
+  space       Int?
   text        String?   @db.VarChar(102400)
-
-  @@index([app, user_id], map: "index_node_app_user")
-  @@index([app, user_id, access], map: "index_node_app_user_access")
-  @@index([parent_id], map: "index_node_parent_id")
-  @@index([user_id, id], map: "index_node_user_id")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
@@ -66,7 +61,8 @@ model node_attr {
 model space {
   id      Int @id
   code    String @db.VarChar(255)
-  root_id Int
+  rootId Int @map("root_id")
+  name    String
 }
 
 model users {

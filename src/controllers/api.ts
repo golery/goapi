@@ -42,9 +42,15 @@ export const getRoute = (): Router => {
             logger.info('Downloaded');
         }));
 
-    router.get('/pencil/book',
+    router.get('/pencil/books',
         apiHandler(async (req, res) => {
             const books = await services().pencilService.getBooks();
+            res.json(books);
+        }));
+
+    router.get('/pencil/book/:bookId',
+        apiHandler(async (req, res) => {
+            const books = await services().pencilService.getBook(parseInt(req.params.bookId));
             res.json(books);
         }));
     return router;

@@ -12,7 +12,10 @@ import * as apiController from './controllers/api';
 
 // API keys and Passport configuration
 // import * as passportConfig from "./config/passport";
-
+import 'reflect-metadata';
+import {createConnection} from 'typeorm';
+import {parse} from 'pg-connection-string';
+import {PostgresConnectionOptions} from 'typeorm/driver/postgres/PostgresConnectionOptions';
 // Create Express server
 const app = express();
 
@@ -106,3 +109,4 @@ app.use('/', (req, res) => {
 // });
 
 export default app;
+
