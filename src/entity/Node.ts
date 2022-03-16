@@ -1,10 +1,10 @@
-import {Column, Entity, PrimaryGeneratedColumn} from 'typeorm';
+import {Column, Entity, PrimaryColumn} from 'typeorm';
 
 // TODO rename table to book
 @Entity()
 export class Node {
-    @PrimaryGeneratedColumn()
-    id?: number;
+    @PrimaryColumn()
+    id: number;
     @Column()
     app: number;
     @Column()
@@ -17,8 +17,6 @@ export class Node {
     createTime: Date;
     @Column()
     updateTime: Date;
-    @Column()
-    space?: number;
     @Column()
     text: string;
     @Column({name: 'space'})

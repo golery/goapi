@@ -1,7 +1,7 @@
 import {ImageService} from './ImageService';
 import {AmazonService} from './AmazonService';
 import {ConfigService} from './ConfigService';
-import {PencilService} from "./PencilService";
+import {PencilService} from './PencilService';
 
 const defaultServices = {
     imageService: new ImageService(),

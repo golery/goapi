@@ -53,5 +53,13 @@ export const getRoute = (): Router => {
             const books = await services().pencilService.getBook(parseInt(req.params.bookId));
             res.json(books);
         }));
+
+    router.post('/pencil/book',
+        apiHandler(async (req, res) => {
+            const books = await services().pencilService.createBook(req.body);
+            res.json(books);
+        }));
+
+
     return router;
 };
