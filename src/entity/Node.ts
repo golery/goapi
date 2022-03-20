@@ -17,21 +17,23 @@ export class Node {
     @PrimaryColumn()
     id: number;
     @Column()
+    createTime: Date;
+    @Column()
+    updateTime: Date;
+    @Column()
     app: number;
     @Column()
     userId: string;
     @Column()
     type: string;
-    @Column()
-    parentId: string;
-    @Column('text', {transformer: childrenTransformer})
-    children: string;
-    @Column()
-    createTime: Date;
-    @Column()
-    updateTime: Date;
-    @Column()
-    text: string;
     @Column({name: 'space'})
     bookId: number;
+    @Column()
+    parentId: string | null;
+    @Column('text', {transformer: childrenTransformer})
+    children: string | null;
+    @Column()
+    title: string  | null;
+    @Column()
+    text: string  | null;
 }
