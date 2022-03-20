@@ -1,6 +1,17 @@
 import {Column, Entity, PrimaryColumn} from 'typeorm';
 
-// TODO rename table to book
+const childrenTransformer = {
+    from(db: string | null): null | number[] {
+        if (!db) {
+            return null;
+        }
+        return db.split(',').map(v => parseInt(v));
+    },
+    to(entity:number[] | null): string | null {
+        if (!entity) return null;
+        return entity.join(',');
+    }
+};
 @Entity()
 export class Node {
     @PrimaryColumn()
@@ -11,8 +22,10 @@ export class Node {
     userId: string;
     @Column()
     type: string;
-
-
+    @Column()
+    parentId: string;
+    @Column('text', {transformer: childrenTransformer})
+    children: string;
     @Column()
     createTime: Date;
     @Column()

@@ -22,7 +22,7 @@ export class PencilService {
         return await bookRepo.find();
     }
 
-    async getBook(bookId: number) {
+    async query(bookId: number) {
         const nodeRepo = getRepository(Node);
         return await nodeRepo.find({where: {app: 1, bookId}});
     }
