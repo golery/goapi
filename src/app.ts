@@ -7,7 +7,6 @@ import cors from 'cors';
 // Controllers (route handlers)
 // import * as homeController from "./controllers/home";
 // import * as userController from "./controllers/user";
-import * as apiController from './controllers/api';
 // import * as contactController from "./controllers/contact";
 
 // API keys and Passport configuration
@@ -16,6 +15,7 @@ import 'reflect-metadata';
 import {createConnection} from 'typeorm';
 import {parse} from 'pg-connection-string';
 import {PostgresConnectionOptions} from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import {getApiRouter} from './router/api';
 // Create Express server
 const app = express();
 
@@ -91,10 +91,6 @@ app.use(
 /**
  * API examples routes.
  */
-app.use('/api2', apiController.getRoute());
-app.use('/', (req, res) => {
-    res.send('ping');
-});
 
 // app.use(errorHandler);
 
@@ -107,6 +103,11 @@ app.use('/', (req, res) => {
 // app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRedirect: "/login" }), (req, res) => {
 //     res.redirect(req.session.returnTo || "/");
 // });
+
+app.use('/api2', getApiRouter());
+app.use('/', (req, res) => {
+    res.send('ping');
+});
 
 export default app;
 

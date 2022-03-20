@@ -16,7 +16,7 @@ const upload = multer({
  * List of API examples.
  * @route GET /api
  */
-export const getRoute = (): Router => {
+export const getApiRouter = (): Router => {
     const router = express.Router();
     router.post('/file/:app', upload.single('file'), apiHandler(async (req, res) => {
         const file = (req as any).file;
@@ -42,7 +42,7 @@ export const getRoute = (): Router => {
             logger.info('Downloaded');
         }));
 
-    router.get('/pencil/books',
+    router.get('/pencil/book',
         apiHandler(async (req, res) => {
             const books = await services().pencilService.getBooks();
             res.json(books);
