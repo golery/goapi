@@ -32,8 +32,12 @@ export class Node {
     parentId: string | null;
     @Column('text', {transformer: childrenTransformer})
     children: string | null;
+    // What is title used for?
     @Column()
     title: string  | null;
+    // Name is displayed on the tree
+    @Column()
+    name: string  | null;
     @Column()
     text: string  | null;
 }
