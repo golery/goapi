@@ -11,20 +11,7 @@
     "scripts": {
         "dev": "ts-node-dev --exit-child src/server.ts",
         "build": "tsc",
-        "start-prod": "NODE_ENV=production node dist/server.js",
-        "build-sass": "sass src/public/css/main.scss dist/public/css/main.css",
-        "build-ts": "tsc",
-        "copy-static-assets": "ts-node copyStaticAssets.ts",
-        "debug": "npm run build && npm run watch-debug",
-        "lint": "eslint \"**/*.ts\" --fix",
-        "serve-debug": "nodemon --enable-source-maps --inspect dist/server.js",
-        "test": "jest --forceExit --coverage --verbose",
-        "watch-debug": "concurrently -k -p \"[{name}]\" -n \"Sass,TypeScript,Node\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-sass\" \"npm run watch-ts\" \"npm run serve-debug\"",
-        "watch-node": "nodemon --enable-source-maps --inspect dist/server.js",
-        "watch-sass": "sass --watch src/public/css/main.scss dist/public/css/main.css",
-        "watch-test": "npm run test -- --watchAll",
-        "watch-ts": "tsc -w",
-        "watch": "concurrently -k -p \"[{name}]\" -n \"Sass,TypeScript,Node\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-sass\" \"npm run watch-ts\" \"npm run watch-node\""
+        "run-as-prod": "NODE_ENV=production node dist/server.js"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.24.0",
@@ -35,7 +22,6 @@
         "bluebird": "3.7.2",
         "body-parser": "1.19.0",
         "compression": "1.7.4",
-        "connect-mongo": "4.4.0",
         "cors": "^2.8.5",
         "dotenv": "8.2.0",
         "errorhandler": "1.5.1",

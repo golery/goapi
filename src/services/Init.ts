@@ -6,6 +6,8 @@ import {SnakeNamingStrategy} from 'typeorm-naming-strategies';
 export const initDb = async () => {
     const pg = parse(process.env.POSTGRES_URL);
     console.log(`Connect to postgres ${pg.host}`);
+    // at local use ts-node, on prod use dist/.js
+    const entityPath = __filename.endsWith('.js') ? '*{.js}': '*{.ts}';
     const opts: PostgresConnectionOptions = {
         type: 'postgres',
         host: pg.host,
@@ -14,7 +16,7 @@ export const initDb = async () => {
         password: pg.password,
         database: pg.database,
         entities: [
-            'src/entity/*{.ts,.js}'
+            `src/entity/${entityPath}`
         ],
         synchronize: false,
         logging: true,
