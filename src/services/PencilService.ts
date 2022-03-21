@@ -1,10 +1,6 @@
-import {node, PrismaClient} from '@prisma/client';
-import * as typeorm from 'typeorm';
 import {getConnection, getRepository} from 'typeorm';
 import {Book} from '../entity/Book';
 import {Node} from '../entity/Node';
-
-const prisma = new PrismaClient();
 
 const APP_PENCIL = 1;
 

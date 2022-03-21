@@ -3,9 +3,11 @@ RUN npm install -g pm2 sass typescript
 
 WORKDIR /app/goapi2
 COPY package*.json ./
-RUN npm i
+RUN npm ci
 
-COPY . .
+COPY *.* ./
+COPY src src
+RUN ls sr*
 
 # Disable below during development of docker
 # The compile can be done by npm run watch-ts
