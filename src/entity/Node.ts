@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryColumn} from 'typeorm';
+import {Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn} from 'typeorm';
 
 const childrenTransformer = {
     from(db: string | null): null | number[] {
@@ -17,8 +17,10 @@ export class Node {
     @PrimaryColumn()
     id: number;
     @Column()
+    @CreateDateColumn()
     createTime: Date;
     @Column()
+    @UpdateDateColumn()
     updateTime: Date;
     @Column()
     app: number;

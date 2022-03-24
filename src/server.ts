@@ -2,7 +2,7 @@ import errorHandler from 'errorhandler';
 import app from './app';
 import {initDb} from './services/Init';
 
-console.log('Starting...');
+console.log('Starting...v1');
 
 /**
  * Error Handler. Provides full stack
