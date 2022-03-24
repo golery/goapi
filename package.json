@@ -11,7 +11,7 @@
     "scripts": {
         "dev": "ts-node-dev --exit-child src/server.ts",
         "build": "tsc",
-        "run-as-prod": "NODE_ENV=production node dist/server.js"
+        "dev-js": "tsc && node dist/server.js"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.24.0",

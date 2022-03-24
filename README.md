@@ -9,7 +9,7 @@ localhost:5000/api2/image/imgur
 At local:
 ./script/build-image.sh
 ./script/push-image.sh
-Test image at local by
+Test image at local (with prod config)
 ./script/run-image.sh
 
 # DEPLOY to KOYEB
@@ -22,6 +22,10 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 
 # DEV
 Access: http://localhost:8200
+## Run with typescript ts-node
+yarn dev
+## Compile and run with js
+yarn dev-js
 
 # TSCONFIG
 

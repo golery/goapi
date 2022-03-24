@@ -7,7 +7,7 @@ export const initDb = async () => {
     const pg = parse(process.env.POSTGRES_URL);
     console.log(`Connect to postgres ${pg.host}`);
     // at local use ts-node, on prod use dist/.js
-    const entityPath = __filename.endsWith('.js') ? '*{.js}': '*{.ts}';
+    const entityPath = __filename.endsWith('.js') ? 'dist/entity/*.js': 'src/entity/*.ts';
     const opts: PostgresConnectionOptions = {
         type: 'postgres',
         host: pg.host,
@@ -16,7 +16,7 @@ export const initDb = async () => {
         password: pg.password,
         database: pg.database,
         entities: [
-            `src/entity/${entityPath}`
+            entityPath
         ],
         synchronize: false,
         logging: true,
