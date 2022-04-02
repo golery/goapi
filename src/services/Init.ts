@@ -19,7 +19,7 @@ export const initDb = async () => {
             entityPath
         ],
         synchronize: false,
-        logging: true,
+        logging: false,
         namingStrategy: new SnakeNamingStrategy(),
     };
     await createConnection(opts);

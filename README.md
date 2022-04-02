@@ -26,6 +26,9 @@ Access: http://localhost:8200
 yarn dev
 ## Compile and run with js
 yarn dev-js
+## Run at local connect to prod
+./scripts/run-image
+It can be used for testing image or just to quickly run backend at local
 
 # TSCONFIG
 

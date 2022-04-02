@@ -15,6 +15,7 @@ const USER_ID = '1';
 export class PencilService {
     async getBooks() {
         const bookRepo = getRepository(Book);
+        // return await bookRepo.find({order: { order: 'ASC'}});
         return await bookRepo.find();
     }
 

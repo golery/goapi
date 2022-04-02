@@ -11,4 +11,6 @@ export class Book {
     rootId: number;
     @Column()
     name: string;
+    @Column()
+    order: number;
 }
