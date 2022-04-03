@@ -31,7 +31,7 @@ export class Node {
     @Column({name: 'space'})
     bookId: number;
     @Column()
-    parentId: string | null;
+    parentId: number | null;
     @Column('text', {transformer: childrenTransformer})
     children: string | null;
     // What is title used for?
