@@ -33,7 +33,7 @@ export class Node {
     @Column()
     parentId: number | null;
     @Column('text', {transformer: childrenTransformer})
-    children: string | null;
+    children: number[] | null;
     // What is title used for?
     @Column()
     title: string  | null;

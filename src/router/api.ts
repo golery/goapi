@@ -34,6 +34,7 @@ export const getApiRouter = (): Router => {
         apiHandler(async (req, res) => {
             const response = await services().imageService.download(req.params.id);
             if (!response) {
+                
                 res.status(404).send('S3 key not found');
             }
             const {data, contentType} = response;
@@ -59,6 +60,12 @@ export const getApiRouter = (): Router => {
         apiHandler(async (req, res) => {
             const books = await services().pencilService.createBook(req.body);
             res.json(books);
+        }));
+
+    router.post('/pencil/move/:nodeId',
+        apiHandler(async (req, res) => {
+            const node = await services().pencilService.moveNode(parseInt(req.params.nodeId), req.body);
+            res.json(node);
         }));
 
 

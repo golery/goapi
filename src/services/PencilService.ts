@@ -13,9 +13,40 @@ export interface CreateSpaceRequest {
 const USER_ID = '1';
 
 export class PencilService {
+    async moveNode(nodeId: number, request: { newBookId?: number, newParentId: number, pos: number }) {
+        const {newBookId, newParentId, pos} = request;
+        const nodeRepo = getRepository(Node);
+        const node = await nodeRepo.findOne(nodeId);
+        const parent = await nodeRepo.findOne(node.parentId);
+
+        const newParent = await nodeRepo.findOne(newParentId);
+        let childList = (newParent.children || []);
+        if (!childList.includes(node.id)) {
+            if (childList.length >= pos) {
+                childList.splice(pos, 0, node.id);
+            } else {
+                childList = [...childList, node.id];
+            }
+        }
+
+        console.log(`Moved node ${nodeId} from ${node.parentId} to ${newParent}`);
+        console.log(`Before update. parent${parent.id}.children`, parent.children, parent.children.filter(childId => childId != node.id));
+        console.log(`Before update. newParent${newParent.id}.children`, newParent.children);
+
+        await Promise.all([nodeRepo.update(parent.id, {children: parent.children.filter(childId => childId != node.id)}),
+            nodeRepo.update(newParent.id, {children: childList}),
+            nodeRepo.update(node.id, {parentId: newParentId})]);
+
+
+        console.log(`Old Parent ${parent.id}.children`, (await nodeRepo.findOne(node.parentId)).children);
+        console.log(`New Parent ${newParent.id} .children`, (await nodeRepo.findOne(newParentId)).children);
+        //        await nodeRepo.update(node.id, { parentId: newParentId});
+        return node;
+    }
+
     async getBooks() {
         const bookRepo = getRepository(Book);
-        return await bookRepo.find({order: { order: 'ASC'}});
+        return await bookRepo.find({order: {order: 'ASC'}});
     }
 
     async query(bookId: number) {
