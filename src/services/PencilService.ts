@@ -12,15 +12,55 @@ export interface CreateSpaceRequest {
 
 const USER_ID = '1';
 
+
+const applyRecursively = async (nodeId: number, apply: (nodeId: number) => Promise<Node>) => {
+    const node = await apply(nodeId);
+    if (!node.children) {
+        return node;
+    }
+
+    console.log(`Apply recursively for child ${node.children}`);
+    await Promise.allSettled(node.children.map(childId => applyRecursively(childId, apply)));
+    return node;
+};
+
+
 export class PencilService {
     async moveNode(nodeId: number, request: { newBookId?: number, newParentId: number, pos: number }): Promise<Node> {
+        console.log(`Start move node ${nodeId}`);
         return await dataSource.transaction(async (entityManager) => {
             const nodeRepo = entityManager.getRepository(Node);
             const {newParentId, pos} = request;
             const node = await nodeRepo.findOneOrFail({where: {id: nodeId}});
             const oldParent = await nodeRepo.findOneOrFail({where: {id: node.parentId}});
-
             const newParent = await nodeRepo.findOneOrFail({where: {id: newParentId}});
+
+            const validateNoLoop = async (nodeId: number, newParentId: number) => {
+                let iter: number = newParentId;
+                while (iter) {
+                    if (iter === nodeId) {
+                        throw new BadRequestError('Cannot move node. Creating a loop');
+                    }
+                    const node = await nodeRepo.findOneOrFail({where: {id: iter}});
+                    console.log(`Check node ${iter} ${node.name}`);
+                    iter = node.parentId;
+                }
+            };
+
+            // forbid that newParent is a children of current node.
+            // when this happens, it creates an island loop which basically detach the whole subtree
+            await validateNoLoop(nodeId, newParentId);
+
+            if (node.bookId !== newParent.bookId) {
+                console.log(`Update bookId from ${node.bookId} to ${newParent.bookId}`);
+                await applyRecursively(nodeId, async (nodeId) => {
+                    const load = await nodeRepo.findOneOrFail({where: {id: nodeId}});
+                    const updated = await nodeRepo.save({...load, bookId: newParent.bookId});
+                    console.log(`Update bookId for ${updated.id}`, updated);
+                    return updated;
+                });
+            }
+
             let childList = (newParent.children || []);
             if (!childList.includes(node.id)) {
                 if (childList.length >= pos) {
@@ -44,7 +84,7 @@ export class PencilService {
     }
 
     async query(bookId: number) {
-        
+
         return await nodeRepo.find({where: {app: 1, bookId}});
     }
 
@@ -56,7 +96,7 @@ export class PencilService {
     async createBook(request: CreateSpaceRequest) {
         const nodeId = await this.generateNodeId();
         const {bookId} = await dataSource.createQueryBuilder().select('max(id)+1', 'bookId').from('space', 'space').getRawOne();
-        
+
         const node = await nodeRepo.save({
             id: nodeId,
             app: APP_PENCIL,
@@ -66,7 +106,7 @@ export class PencilService {
             name: request.name,
             title: request.name,
         });
-        
+
         const book = await bookRepo.save({
             id: bookId,
             code: request.code,
