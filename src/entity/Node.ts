@@ -26,8 +26,9 @@ export class Node {
     app: number;
     @Column()
     userId: string;
+    // always null
     @Column()
-    type: string;
+    type: string | null;
     @Column({name: 'space'})
     bookId: number;
     @Column()

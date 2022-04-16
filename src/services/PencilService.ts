@@ -1,6 +1,8 @@
 import {getConnection, getRepository} from 'typeorm';
 import {Book} from '../entity/Book';
 import {Node} from '../entity/Node';
+import {createHook} from 'async_hooks';
+import {BadRequestError} from '../util/exceptions';
 
 const APP_PENCIL = 1;
 
@@ -54,19 +56,24 @@ export class PencilService {
         return await nodeRepo.find({where: {app: 1, bookId}});
     }
 
-    async createBook(request: CreateSpaceRequest) {
+    private async generateNodeId(): Promise<number> {
         const connection = getConnection();
         const {nodeId} = await connection.createQueryBuilder().select('nextval(\'seq_node_id\')', 'nodeId').from('seq_node_id', 'seq').getRawOne();
+        return parseInt(nodeId);
+    }
+    async createBook(request: CreateSpaceRequest) {
+        const connection = getConnection();
+        const nodeId = await this.generateNodeId();
         const {bookId} = await connection.createQueryBuilder().select('max(id)+1', 'bookId').from('space', 'space').getRawOne();
         const nodeRepo = getRepository(Node);
         const node = await nodeRepo.save({
             id: nodeId,
             app: APP_PENCIL,
+            userId: USER_ID,
             bookId,
 
             name: request.name,
             title: request.name,
-            userId: USER_ID,
         });
         const bookRepo = getRepository(Book);
         const book = await bookRepo.save({
@@ -76,5 +83,46 @@ export class PencilService {
             name: request.name,
         });
         return {book, node};
+    }
+
+    async addNode(parentId: number, position: number = 0): Promise<Node> {
+        const repo = await getRepository(Node);
+        const parent = await repo.findOne(parentId);
+        if (!parent) {
+            throw new BadRequestError(`Invalid parentId ${parentId}`);
+        }
+
+        const nodeId = await this.generateNodeId();
+        const createNode: Partial<Node> = {
+            id: nodeId,
+            userId: USER_ID,
+            app: APP_PENCIL,
+            parentId: parentId,
+            bookId: parent.bookId,
+        };
+
+        const node = await repo.save(createNode);
+
+        const children = parent.children ?? [];
+        if (children.length < position) {
+            children.push(node.id);
+        } else {
+            children.splice(position, 0, node.id);
+        }
+        parent.children = children;
+        await repo.save(parent);
+        console.log(`Added node ${nodeId}`);
+        return node;
+    }
+
+    async updateNode(node: Node): Promise<Node> {
+        const repo = await getRepository(Node);
+        const existing = await repo.findOne(node.id);
+        delete node.userId;
+        delete node.app;
+        delete node.createTime;
+        delete node.updateTime;
+        console.log('Update', existing, node);
+        return await repo.save({...existing, ...node});
     }
 }

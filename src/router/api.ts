@@ -5,6 +5,7 @@ import {services} from '../services/Factory';
 import multer from 'multer';
 import {apiHandler} from '../util/express-utils';
 import logger from '../util/logger';
+import {Node} from '../entity/Node';
 
 const upload = multer({
     limits: {
@@ -68,6 +69,16 @@ export const getApiRouter = (): Router => {
             res.json(node);
         }));
 
+    router.post('/pencil/add/:nodeId',
+        apiHandler(async (req, res) => {
+            const node = await services().pencilService.addNode(parseInt(req.params.nodeId), parseInt(req.params.position));
+            res.json(node);
+        }));
 
+    router.post('/pencil/update',
+        apiHandler(async (req, res) => {
+            const node = await services().pencilService.updateNode(req.body as Node);
+            res.json(node);
+        }));
     return router;
 };
