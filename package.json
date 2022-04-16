@@ -43,8 +43,8 @@
         "pg-connection-string": "^2.5.0",
         "pug": "3.0.2",
         "reflect-metadata": "^0.1.13",
-        "typeorm": "^0.2.45",
-        "typeorm-naming-strategies": "^4.0.0",
+        "typeorm": "^0.3.6",
+        "typeorm-naming-strategies": "^4.1.0",
         "uuid": "^8.3.2",
         "winston": "3.3.3",
         "yaml": "^1.10.2"

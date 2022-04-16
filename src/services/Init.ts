@@ -1,7 +1,13 @@
 import {parse} from 'pg-connection-string';
 import {PostgresConnectionOptions} from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import {createConnection} from 'typeorm';
+import {DataSource, Repository} from 'typeorm';
 import {SnakeNamingStrategy} from 'typeorm-naming-strategies';
+import {Book} from '../entity/Book';
+import {Node} from '../entity/Node';
+
+export let dataSource: DataSource;
+export let nodeRepo: Repository<Node>;
+export let bookRepo: Repository<Book>;
 
 export const initDb = async () => {
     const pg = parse(process.env.POSTGRES_URL);
@@ -22,5 +28,11 @@ export const initDb = async () => {
         logging: false,
         namingStrategy: new SnakeNamingStrategy(),
     };
-    await createConnection(opts);
+    dataSource = new DataSource(opts);
+
+    await dataSource.initialize();
+
+    nodeRepo = dataSource.getRepository(Node);
+    bookRepo = dataSource.getRepository(Book);
 };
+
