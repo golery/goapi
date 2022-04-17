@@ -51,6 +51,7 @@ export class PencilService {
             // when this happens, it creates an island loop which basically detach the whole subtree
             await validateNoLoop(nodeId, newParentId);
 
+            console.log(`Check bookId ${node.bookId} ${newParent.bookId}`);
             if (node.bookId !== newParent.bookId) {
                 console.log(`Update bookId from ${node.bookId} to ${newParent.bookId}`);
                 await applyRecursively(nodeId, async (nodeId) => {
@@ -59,6 +60,7 @@ export class PencilService {
                     console.log(`Update bookId for ${updated.id}`, updated);
                     return updated;
                 });
+                console.log('Done set bookId');
             }
 
             let childList = (newParent.children || []);
@@ -75,6 +77,7 @@ export class PencilService {
                 nodeRepo.update(newParent.id, {children: childList}),
                 nodeRepo.update(node.id, {parentId: newParentId})]);
 
+            console.log('Done move node');
             return node;
         });
     }
