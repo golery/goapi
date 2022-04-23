@@ -1,6 +1,7 @@
 import {Node} from '../entity/Node';
 import {BadRequestError} from '../util/exceptions';
 import {dataSource, bookRepo, nodeRepo} from './Init';
+import {Repository} from 'typeorm';
 
 const APP_PENCIL = 1;
 
@@ -22,6 +23,15 @@ const applyRecursively = async (nodeId: number, apply: (nodeId: number) => Promi
     console.log(`Apply recursively for child ${node.children}`);
     await Promise.allSettled(node.children.map(childId => applyRecursively(childId, apply)));
     return node;
+};
+
+const findSubTreeNodeIds = async (nodeId: number, nodeRepo: Repository<Node>): Promise<number[]> => {
+    const node = await nodeRepo.findOneOrFail({where: {id: nodeId}});
+    if (!node) {
+        return [];
+    }
+    const childrenIds = node.children ? await Promise.all(node.children.map(async (childId) => await findSubTreeNodeIds(childId, nodeRepo))) : [];
+    return [node.id, ...childrenIds.flat()];
 };
 
 
@@ -79,6 +89,24 @@ export class PencilService {
 
             console.log('Done move node');
             return node;
+        });
+    }
+
+    async deleteNode(nodeId: number): Promise<number[]> {
+        console.log(`Start delete node ${nodeId}`);
+        return await dataSource.transaction(async (entityManager) => {
+            const nodeRepo = entityManager.getRepository(Node);
+            const node = await nodeRepo.findOneOrFail({where: {id: nodeId}});
+            if (!node.parentId) {
+                throw new BadRequestError('Cannot delete root node');
+            }
+            const parent = await nodeRepo.findOneOrFail({where: {id: node.parentId}});
+            await nodeRepo.update(parent.id, {children: parent.children.filter(id => id !== nodeId)});
+
+            const subTreeNodeIds = await findSubTreeNodeIds(nodeId, nodeRepo);
+            console.log('Deleting nodes ', subTreeNodeIds);
+            await nodeRepo.delete(subTreeNodeIds);
+            return subTreeNodeIds;
         });
     }
 
@@ -157,4 +185,6 @@ export class PencilService {
         console.log(`Update ${node.id}`);
         return await nodeRepo.save({...existing, ...node});
     }
+
+
 }

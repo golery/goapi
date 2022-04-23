@@ -80,5 +80,10 @@ export const getApiRouter = (): Router => {
             const node = await services().pencilService.updateNode(req.body as Node);
             res.json(node);
         }));
+    router.delete('/pencil/delete/:nodeId',
+        apiHandler(async (req, res)=> {
+            const node = await services().pencilService.deleteNode(parseInt(req.params.nodeId));
+            res.json(node);
+        }));
     return router;
 };
