@@ -1,0 +1,1 @@
+./build-image.sh && ./push-image.sh && koyeb services redeploy goapi/main

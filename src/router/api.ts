@@ -29,36 +29,29 @@ export const getApiRouter = (): Router => {
             buffer: file.buffer
         };
         const response = await services().imageService.upload(uploadParams);
-        res.send({...response, data: undefined});
+        res.send(response);
     }));
 
-    router.get('/file/buckets',
-        apiHandler(async (req, res) => {
-            const {projectId, clientEmail, privateKey} = services().config.get().gcp;
-            const storage = new Storage({
-                projectId, credentials: {
-                    client_email: clientEmail,
-                    private_key: privateKey,
-                }
-            });
-
-            const [buckets] = await storage.getBuckets();
-
-            res.send({buckets: buckets.map(b => b.metadata.id)});
-        }));
 
     router.get('/file/:id',
         apiHandler(async (req, res) => {
-            const response = await services().imageService.download(req.params.id);
-            if (!response) {
-
-                res.status(404).send('S3 key not found');
-            }
-            const {data, contentType} = response;
-            res.contentType(contentType);
-            (data as any).pipe(res);
-            logger.info('Downloaded');
+            await services().imageService.download(req.params.id, res);
         }));
+
+    // router.get('/file/buckets',
+    //     apiHandler(async (req, res) => {
+    //         const {projectId, clientEmail, privateKey} = services().config.get().gcp;
+    //         const storage = new Storage({
+    //             projectId, credentials: {
+    //                 client_email: clientEmail,
+    //                 private_key: privateKey,
+    //             }
+    //         });
+    //
+    //         const [buckets] = await storage.getBuckets();
+    //
+    //         res.send({buckets: buckets.map(b => b.metadata.id)});
+    //     }));
 
     router.get('/pencil/book/:bookId/node',
         apiHandler(async (req, res) => {
