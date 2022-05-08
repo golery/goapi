@@ -6,6 +6,7 @@ import multer from 'multer';
 import {apiHandler} from '../util/express-utils';
 import logger from '../util/logger';
 import {Node} from '../entity/Node';
+import {Storage} from '@google-cloud/storage';
 
 const upload = multer({
     limits: {
@@ -31,11 +32,26 @@ export const getApiRouter = (): Router => {
         res.send({...response, data: undefined});
     }));
 
+    router.get('/file/buckets',
+        apiHandler(async (req, res) => {
+            const {projectId, clientEmail, privateKey} = services().config.get().gcp;
+            const storage = new Storage({
+                projectId, credentials: {
+                    client_email: clientEmail,
+                    private_key: privateKey,
+                }
+            });
+
+            const [buckets] = await storage.getBuckets();
+
+            res.send({buckets: buckets.map(b => b.metadata.id)});
+        }));
+
     router.get('/file/:id',
         apiHandler(async (req, res) => {
             const response = await services().imageService.download(req.params.id);
             if (!response) {
-                
+
                 res.status(404).send('S3 key not found');
             }
             const {data, contentType} = response;
@@ -81,9 +97,11 @@ export const getApiRouter = (): Router => {
             res.json(node);
         }));
     router.delete('/pencil/delete/:nodeId',
-        apiHandler(async (req, res)=> {
+        apiHandler(async (req, res) => {
             const node = await services().pencilService.deleteNode(parseInt(req.params.nodeId));
             res.json(node);
         }));
     return router;
+
+
 };

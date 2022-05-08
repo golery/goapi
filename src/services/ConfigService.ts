@@ -7,6 +7,11 @@ interface Config {
     awsAccessKeyId: string;
     awsAccessKeySecret: string;
     postgresUrl: string
+    gcp: {
+        projectId: string;
+        clientEmail: string;
+        privateKey: string;
+    }
 }
 
 let config: Config;
@@ -31,6 +36,12 @@ function loadConfig(): Config {
         awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
         awsAccessKeySecret: process.env.AWS_SECRET_ACCESS_KEY,
         postgresUrl: process.env.POSTGRES_URL,
+
+        gcp: {
+            projectId: process.env.GCP_PROJECT_ID,
+            clientEmail: process.env.GCP_CLIENT_EMAIL,
+            privateKey: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        },
     };
     // TODO: validate all fields
     if (!config.postgresUrl) {
