@@ -7,6 +7,7 @@ import {apiHandler} from '../util/express-utils';
 import logger from '../util/logger';
 import {Node} from '../entity/Node';
 import {Storage} from '@google-cloud/storage';
+import {login} from '../services/AccountService';
 
 const upload = multer({
     limits: {
@@ -20,6 +21,19 @@ const upload = multer({
  */
 export const getApiRouter = (): Router => {
     const router = express.Router();
+
+    router.post('/login', apiHandler(async (req, res) => {
+        const { username, password } = req.body;
+        console.log(`Login for ${username}`);
+        const result = login(username, password);
+        if (result) {
+            res.json(result);
+        } else {
+            console.log('Login failed');
+            res.status(401).send();
+        }
+    }));
+
     router.post('/file/:app', upload.single('file'), apiHandler(async (req, res) => {
         const file = (req as any).file;
         const uploadParams = {
@@ -32,26 +46,10 @@ export const getApiRouter = (): Router => {
         res.send(response);
     }));
 
-
     router.get('/file/:id',
         apiHandler(async (req, res) => {
             await services().imageService.download(req.params.id, res);
         }));
-
-    // router.get('/file/buckets',
-    //     apiHandler(async (req, res) => {
-    //         const {projectId, clientEmail, privateKey} = services().config.get().gcp;
-    //         const storage = new Storage({
-    //             projectId, credentials: {
-    //                 client_email: clientEmail,
-    //                 private_key: privateKey,
-    //             }
-    //         });
-    //
-    //         const [buckets] = await storage.getBuckets();
-    //
-    //         res.send({buckets: buckets.map(b => b.metadata.id)});
-    //     }));
 
     router.get('/pencil/book/:bookId/node',
         apiHandler(async (req, res) => {
