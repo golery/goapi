@@ -34,11 +34,6 @@ export const getAuthenticatedRouter = (): Router => {
         res.send(response);
     }));
 
-    router.get('/file/:id',
-        apiHandler(async (req, res) => {
-            await services().imageService.download(req.params.id, res);
-        }));
-
     router.get('/pencil/book/:bookId/node',
         apiHandler(async (req, res) => {
             const books = await services().pencilService.query(parseInt(req.params.bookId));

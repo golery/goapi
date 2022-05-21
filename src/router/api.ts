@@ -2,6 +2,7 @@ import express, {Router} from 'express';
 import {apiHandler} from '../util/express-utils';
 import {login} from '../services/AccountService';
 import {getAuthenticatedRouter} from './authenticated';
+import {services} from '../services/Factory';
 
 /**
  * List of API examples.
@@ -21,6 +22,11 @@ export const getApiRouter = (): Router => {
             res.status(401).send();
         }
     }));
+
+    router.get('/file/:id',
+        apiHandler(async (req, res) => {
+            await services().imageService.download(req.params.id, res);
+        }));
 
     router.use('/', getAuthenticatedRouter());
     return router;
