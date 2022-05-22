@@ -182,7 +182,6 @@ export class PencilService {
         delete node.app;
         delete node.createTime;
         delete node.updateTime;
-        console.log(`Update ${node.id}`);
         return await nodeRepo.save({...existing, ...node});
     }
 
