@@ -148,6 +148,7 @@ export class PencilService {
     }
 
     async addNode(parentId: number, position: number = 0): Promise<Node> {
+        console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({where: {id: parentId}});
         if (!parent) {
             throw new BadRequestError(`Invalid parentId ${parentId}`);
@@ -177,6 +178,7 @@ export class PencilService {
     }
 
     async updateNode(node: Node): Promise<Node> {
+        console.log(`Start upload node ${node.id}`);
         const existing = await nodeRepo.findOneOrFail({where: {id: node.id}});
         delete node.userId;
         delete node.app;
