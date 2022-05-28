@@ -26,11 +26,17 @@ const applyRecursively = async (nodeId: number, apply: (nodeId: number) => Promi
 };
 
 const findSubTreeNodeIds = async (nodeId: number, nodeRepo: Repository<Node>): Promise<number[]> => {
-    const node = await nodeRepo.findOneOrFail({where: {id: nodeId}});
+    const node = await nodeRepo.findOne({where: {id: nodeId}});
     if (!node) {
         return [];
     }
-    const childrenIds = node.children ? await Promise.all(node.children.map(async (childId) => await findSubTreeNodeIds(childId, nodeRepo))) : [];
+    const childrenIds = node.children ? await Promise.all(node.children.map(async (childId) => {
+        if (!childId) {
+            console.log(`Node ${nodeId} contains invalid child`, node.children);
+            return [];
+        }
+        return await findSubTreeNodeIds(childId, nodeRepo);
+    })) : [];
     return [node.id, ...childrenIds.flat()];
 };
 
