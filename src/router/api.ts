@@ -28,6 +28,11 @@ export const getApiRouter = (): Router => {
             await services().imageService.download(req.params.id, res);
         }));
 
+    router.get('/public-node-ids',
+         apiHandler(async (req, res) => {
+        const nodes = await services().pencilService.getPublicNodeIds();
+        res.json(nodes);
+    }));
     router.use('/', getAuthenticatedRouter());
     return router;
 

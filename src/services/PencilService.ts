@@ -45,6 +45,12 @@ const findSubTreeNodeIds = async (nodeId: number, nodeRepo: Repository<Node>): P
 
 
 export class PencilService {
+    async getPublicNodeIds(): Promise<number[]> {
+        const books = await bookRepo.find({where: { code: 'publish'}});
+        const nodes = await nodeRepo.find({where: {bookId: books[0].id}});
+        return nodes.map(node => node.id);
+    }
+
     async moveNode(nodeId: number, request: { newBookId?: number, newParentId: number, pos: number }): Promise<Node> {
         console.log(`Start move node ${nodeId}`);
         return await dataSource.transaction(async (entityManager) => {
