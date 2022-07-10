@@ -45,10 +45,19 @@ const findSubTreeNodeIds = async (nodeId: number, nodeRepo: Repository<Node>): P
 
 
 export class PencilService {
+    async getPublishedBook() {
+        return await bookRepo.findOne({where: {code: 'publish'}});
+    }
+
     async getPublicNodeIds(): Promise<number[]> {
-        const books = await bookRepo.find({where: { code: 'publish'}});
-        const nodes = await nodeRepo.find({where: {bookId: books[0].id}});
+        const book = await this.getPublishedBook();
+        const nodes = await nodeRepo.find({where: {bookId: book.id}});
         return nodes.map(node => node.id);
+    }
+
+    async getPublicNode(nodeId: number): Promise<Node> {
+        const book = await this.getPublishedBook();
+        return await nodeRepo.findOne({where: {id: nodeId, bookId: book.id}});
     }
 
     async moveNode(nodeId: number, request: { newBookId?: number, newParentId: number, pos: number }): Promise<Node> {

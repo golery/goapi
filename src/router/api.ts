@@ -3,6 +3,7 @@ import {apiHandler} from '../util/express-utils';
 import {login} from '../services/AccountService';
 import {getAuthenticatedRouter} from './authenticated';
 import {services} from '../services/Factory';
+import {getBackendRouter} from './backend';
 
 /**
  * List of API examples.
@@ -28,11 +29,8 @@ export const getApiRouter = (): Router => {
             await services().imageService.download(req.params.id, res);
         }));
 
-    router.get('/public-node-ids',
-         apiHandler(async (req, res) => {
-        const nodes = await services().pencilService.getPublicNodeIds();
-        res.json(nodes);
-    }));
+    router.use('/backend', getBackendRouter());
+
     router.use('/', getAuthenticatedRouter());
     return router;
 
