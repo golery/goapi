@@ -66,52 +66,63 @@ export class PencilService {
             const nodeRepo = entityManager.getRepository(Node);
             const {newParentId, pos} = request;
             const node = await nodeRepo.findOneOrFail({where: {id: nodeId}});
-            const oldParent = await nodeRepo.findOneOrFail({where: {id: node.parentId}});
-            const newParent = await nodeRepo.findOneOrFail({where: {id: newParentId}});
 
-            const validateNoLoop = async (nodeId: number, newParentId: number) => {
-                let iter: number = newParentId;
-                while (iter) {
-                    if (iter === nodeId) {
-                        throw new BadRequestError('Cannot move node. Creating a loop');
+            if (node.parentId === newParentId) {
+                const parent = await nodeRepo.findOneOrFail({where: {id: node.parentId}});
+                const childList = (parent.children || []);
+                const index = childList.indexOf(node.id);
+                childList.splice(index, 1);
+                childList.splice(pos, 0, node.id);
+                await nodeRepo.update(parent.id, {children: childList});
+                console.log('Done change order in node. New child list', childList);
+            } else {
+                const oldParent = await nodeRepo.findOneOrFail({where: {id: node.parentId}});
+                const newParent = await nodeRepo.findOneOrFail({where: {id: newParentId}});
+
+                const validateNoLoop = async (nodeId: number, newParentId: number) => {
+                    let iter: number = newParentId;
+                    while (iter) {
+                        if (iter === nodeId) {
+                            throw new BadRequestError('Cannot move node. Creating a loop');
+                        }
+                        const node = await nodeRepo.findOneOrFail({where: {id: iter}});
+                        console.log(`Check node ${iter} ${node.name}`);
+                        iter = node.parentId;
                     }
-                    const node = await nodeRepo.findOneOrFail({where: {id: iter}});
-                    console.log(`Check node ${iter} ${node.name}`);
-                    iter = node.parentId;
+                };
+
+                // forbid that newParent is a children of current node.
+                // when this happens, it creates an island loop which basically detach the whole subtree
+                await validateNoLoop(nodeId, newParentId);
+
+                console.log(`Check bookId ${node.bookId} ${newParent.bookId}`);
+                if (node.bookId !== newParent.bookId) {
+                    console.log(`Update bookId from ${node.bookId} to ${newParent.bookId}`);
+                    await applyRecursively(nodeId, async (nodeId) => {
+                        const load = await nodeRepo.findOneOrFail({where: {id: nodeId}});
+                        const updated = await nodeRepo.save({...load, bookId: newParent.bookId});
+                        console.log(`Update bookId for ${updated.id}`, updated);
+                        return updated;
+                    });
+                    console.log('Done set bookId');
                 }
-            };
 
-            // forbid that newParent is a children of current node.
-            // when this happens, it creates an island loop which basically detach the whole subtree
-            await validateNoLoop(nodeId, newParentId);
-
-            console.log(`Check bookId ${node.bookId} ${newParent.bookId}`);
-            if (node.bookId !== newParent.bookId) {
-                console.log(`Update bookId from ${node.bookId} to ${newParent.bookId}`);
-                await applyRecursively(nodeId, async (nodeId) => {
-                    const load = await nodeRepo.findOneOrFail({where: {id: nodeId}});
-                    const updated = await nodeRepo.save({...load, bookId: newParent.bookId});
-                    console.log(`Update bookId for ${updated.id}`, updated);
-                    return updated;
-                });
-                console.log('Done set bookId');
-            }
-
-            let childList = (newParent.children || []);
-            if (!childList.includes(node.id)) {
-                if (childList.length >= pos) {
-                    childList.splice(pos, 0, node.id);
-                } else {
-                    childList = [...childList, node.id];
+                let childList = (newParent.children || []);
+                if (!childList.includes(node.id)) {
+                    if (childList.length >= pos) {
+                        childList.splice(pos, 0, node.id);
+                    } else {
+                        childList = [...childList, node.id];
+                    }
                 }
+
+                await Promise.all([
+                    nodeRepo.update(oldParent.id, {children: oldParent.children.filter(childId => childId != node.id)}),
+                    nodeRepo.update(newParent.id, {children: childList}),
+                    nodeRepo.update(node.id, {parentId: newParentId})]);
+
+                console.log('Done move node to new parent');
             }
-
-            await Promise.all([
-                nodeRepo.update(oldParent.id, {children: oldParent.children.filter(childId => childId != node.id)}),
-                nodeRepo.update(newParent.id, {children: childList}),
-                nodeRepo.update(node.id, {parentId: newParentId})]);
-
-            console.log('Done move node');
             return node;
         });
     }
