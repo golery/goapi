@@ -3,7 +3,7 @@ import {Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn} from 
 const childrenTransformer = {
     from(db: string | null): null | number[] {
         if (!db) {
-            return null;
+            return [];
         }
         return db.split(',').map(v => parseInt(v));
     },
