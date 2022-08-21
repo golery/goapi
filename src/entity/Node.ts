@@ -5,7 +5,7 @@ const childrenTransformer = {
         if (!db) {
             return [];
         }
-        return db.split(',').map(v => parseInt(v));
+        return db.split(',').map(v => parseInt(v)).filter(v => !isNaN(v));
     },
     to(entity:number[] | null): string | null {
         if (!entity) return null;
