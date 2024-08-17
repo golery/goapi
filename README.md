@@ -23,9 +23,9 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 # DEV
 Access: http://localhost:8200
 ## Run with typescript ts-node, using dev db
-yarn dev
+npm run dev
 ## Compile and run with js
-yarn dev-js
+npm run dev-js
 ## Run at local connect to prod
 ./scripts/run-image
 It can be used for testing image or just to quickly run backend at local

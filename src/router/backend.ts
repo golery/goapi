@@ -1,10 +1,6 @@
 import express, {Router} from 'express';
 import {services} from '../services/Factory';
 import {apiHandler} from '../util/express-utils';
-import logger from '../util/logger';
-import {Node} from '../entity/Node';
-import {login} from '../services/AccountService';
-import {authMiddleware} from '../middlewares/AuthMiddleware';
 
 /**
  * Backend router are API for Verxel backend
@@ -23,6 +19,12 @@ export const getBackendRouter = (): Router => {
             const nodes = await services().pencilService.getPublicNode(parseInt(req.params.nodeId));
             res.json(nodes);
         }));
+
+    // FIXME: add input validation
+    router.post('/data/sync', apiHandler(async (req, res) => {
+        const nodes = await services().pencilService.getPublicNode(parseInt(req.params.nodeId));
+        res.json(nodes);
+    }));
 
     return router;
 };
