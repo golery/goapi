@@ -79,8 +79,7 @@ export const getAuthenticatedRouter = (): Router => {
 
 
     router.post('/record/sync', apiHandler(async (req, res) => {
-        const nodes = syncRecords((req as any).ctx, req.body);
-        res.json(nodes);
+        return await syncRecords((req as any).ctx, req.body);    
     }));
     return router;
 };

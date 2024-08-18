@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import * as uuid from 'uuid';
 
-@Entity({tableName: 'object'})
+@Entity({tableName: 'record'})
 export class DataRecord {
 
    @PrimaryKey({ type: 'uuid' })
