@@ -4,3 +4,4 @@ export enum AppIds {
 }
 
 export const APP_ID_HEADER = 'appId';
+export const GROUP_ID_HEADER = 'groupId';

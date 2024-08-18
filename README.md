@@ -22,6 +22,8 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 
 # DEV
 Access: http://localhost:8200
+In Virtual Machine, Add portforwarding so that Windows hostmachine can access with http://localhost:8200
+
 ## Run with typescript ts-node, using dev db
 npm run dev
 ## Compile and run with js
