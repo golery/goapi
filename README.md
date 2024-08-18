@@ -35,3 +35,12 @@ It can be used for testing image or just to quickly run backend at local
 1. The following are for typeorm
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
+
+# STACK
+1. MikroORM is a replacement of TypeORM (It support well uuid type, json type).
+   Sample: RecordService
+2. Access DB using DBeaver   
+
+# DEPRECATED
+1. TypeORM is replaced by MikroOrm
+2. /api2/... is replaced by /api/....
