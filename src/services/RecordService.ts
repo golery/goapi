@@ -1,5 +1,5 @@
 /** This service supports synchronizing list of data record. Data is just string without schema */
-import { DataRecord } from '../entity-mikro/record.entity';
+import { DataRecord } from '../entity/record.entity';
 import { Ctx } from 'types/context';
 import { orm } from './Init';
 import * as _ from 'lodash';
@@ -15,7 +15,7 @@ export function fetchRecord(ctx: Ctx, fromTime?: Date): Promise<Record<string, a
       return dataMap;
     });
 }
-
+ 
 
 export async function upsertRecords(ctx: Ctx, recordMap: Record<string, any[]>): Promise<void> {
   console.log('Upserting records', recordMap);
