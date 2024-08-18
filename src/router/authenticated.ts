@@ -7,7 +7,7 @@ import {Node} from '../entity/Node';
 import {Storage} from '@google-cloud/storage';
 import {login} from '../services/AccountService';
 import {authMiddleware} from '../middlewares/AuthMiddleware';
-import { syncRecords } from '../services/RecordService';
+import { syncRecords, upsertRecords } from '../services/RecordService';
 
 const upload = multer({
     limits: {
@@ -78,8 +78,15 @@ export const getAuthenticatedRouter = (): Router => {
         }));
 
 
-    router.post('/record/sync', apiHandler(async (req, res) => {
-        return await syncRecords((req as any).ctx, req.body);    
+    router.post('/record/fetch', apiHandler(async (req, res) => {
+        console.log('Sync records', req.query);
+        const fromTime = req.query.fromTime && new Date(Date.parse(req.query.fromTime as string));
+        return await syncRecords((req as any).ctx, req.body, fromTime);    
+    }));
+
+    router.post('/record/upsert', apiHandler(async (req, res) => {
+        await upsertRecords((req as any).ctx, req.body);    
+        return 'OK';
     }));
     return router;
 };
