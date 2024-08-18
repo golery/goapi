@@ -19,12 +19,5 @@ export const getBackendRouter = (): Router => {
             const nodes = await services().pencilService.getPublicNode(parseInt(req.params.nodeId));
             res.json(nodes);
         }));
-
-    // FIXME: add input validation
-    router.post('/data/sync', apiHandler(async (req, res) => {
-        const nodes = await services().pencilService.getPublicNode(parseInt(req.params.nodeId));
-        res.json(nodes);
-    }));
-
     return router;
 };

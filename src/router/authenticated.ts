@@ -7,6 +7,7 @@ import {Node} from '../entity/Node';
 import {Storage} from '@google-cloud/storage';
 import {login} from '../services/AccountService';
 import {authMiddleware} from '../middlewares/AuthMiddleware';
+import { syncRecords } from '../services/RecordService';
 
 const upload = multer({
     limits: {
@@ -75,5 +76,11 @@ export const getAuthenticatedRouter = (): Router => {
             const node = await services().pencilService.deleteNode(parseInt(req.params.nodeId));
             res.json(node);
         }));
+
+
+    router.post('/record/sync', apiHandler(async (req, res) => {
+        const nodes = syncRecords((req as any).ctx, req.body);
+        res.json(nodes);
+    }));
     return router;
 };
