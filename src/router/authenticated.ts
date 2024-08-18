@@ -7,6 +7,7 @@ import {Node} from '../entity/Node';
 import {Storage} from '@google-cloud/storage';
 import {login} from '../services/AccountService';
 import {authMiddleware} from '../middlewares/AuthMiddleware';
+import { fetchRecord, upsertRecords } from '../services/RecordService';
 
 const upload = multer({
     limits: {
@@ -75,5 +76,16 @@ export const getAuthenticatedRouter = (): Router => {
             const node = await services().pencilService.deleteNode(parseInt(req.params.nodeId));
             res.json(node);
         }));
+
+
+    router.post('/record/fetch', apiHandler(async (req, res) => {    
+        const fromTime = req.query.fromTime && new Date(Date.parse(req.query.fromTime as string));
+        return await fetchRecord((req as any).ctx, fromTime);    
+    }));
+
+    router.post('/record/upsert', apiHandler(async (req, res) => {
+        await upsertRecords((req as any).ctx, req.body);    
+        return 'OK';
+    }));
     return router;
 };

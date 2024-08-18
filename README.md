@@ -23,9 +23,9 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 # DEV
 Access: http://localhost:8200
 ## Run with typescript ts-node, using dev db
-yarn dev
+npm run dev
 ## Compile and run with js
-yarn dev-js
+npm run dev-js
 ## Run at local connect to prod
 ./scripts/run-image
 It can be used for testing image or just to quickly run backend at local
@@ -35,3 +35,12 @@ It can be used for testing image or just to quickly run backend at local
 1. The following are for typeorm
 "emitDecoratorMetadata": true,
 "experimentalDecorators": true,
+
+# STACK
+1. MikroORM is a replacement of TypeORM (It support well uuid type, json type).
+   Sample: RecordService
+2. Access DB using DBeaver   
+
+# DEPRECATED
+1. TypeORM is replaced by MikroOrm
+2. /api2/... is replaced by /api/....
