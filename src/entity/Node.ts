@@ -1,16 +1,25 @@
-import {Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn} from 'typeorm';
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    PrimaryColumn,
+    UpdateDateColumn,
+} from 'typeorm';
 
 const childrenTransformer = {
     from(db: string | null): null | number[] {
         if (!db) {
             return [];
         }
-        return db.split(',').map(v => parseInt(v)).filter(v => !isNaN(v));
+        return db
+            .split(',')
+            .map((v) => parseInt(v))
+            .filter((v) => !isNaN(v));
     },
-    to(entity:number[] | null): string | null {
+    to(entity: number[] | null): string | null {
         if (!entity) return null;
         return entity.join(',');
-    }
+    },
 };
 @Entity()
 export class Node {
@@ -29,18 +38,18 @@ export class Node {
     // always null
     @Column()
     type: string | null;
-    @Column({name: 'space'})
+    @Column({ name: 'space' })
     bookId: number;
     @Column()
     parentId: number | null;
-    @Column('text', {transformer: childrenTransformer})
+    @Column('text', { transformer: childrenTransformer })
     children: number[] | null;
     // What is title used for?
     @Column()
-    title: string  | null;
+    title: string | null;
     // Name is displayed on the tree
     @Column()
-    name: string  | null;
+    name: string | null;
     @Column()
-    text: string  | null;
+    text: string | null;
 }

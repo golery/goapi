@@ -1,4 +1,4 @@
-import {Column, Entity, PrimaryColumn} from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 // TODO rename table to book
 @Entity('space')

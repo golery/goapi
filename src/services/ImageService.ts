@@ -1,23 +1,22 @@
-import {services} from './Factory';
-import {v4 as uuidv4} from 'uuid';
+import { services } from './Factory';
+import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import mime from 'mime-types';
-import {Bucket, Storage} from '@google-cloud/storage';
+import { Bucket, Storage } from '@google-cloud/storage';
 import * as stream from 'stream';
 import * as util from 'util';
 import express from 'express';
 
 export interface ImageUploadRequest {
-    app: string
-    fileName: string
-    mime: string
-    buffer: Buffer
+    app: string;
+    fileName: string;
+    mime: string;
+    buffer: Buffer;
 }
 
 const pipeline = util.promisify(stream.pipeline);
 
 export class ImageService {
-
     //
     // async uploadS3(request: ImageUploadRequest) {
     //     const id = uuidv4();
@@ -51,12 +50,14 @@ export class ImageService {
     //     }
     // }
 
-
     // https://googleapis.dev/nodejs/storage/latest/File.html#createWriteStream
     async upload(request: ImageUploadRequest) {
         console.log('Upload', request.fileName, request.mime);
         const id = uuidv4();
-        let ext = path.extname(request.fileName) || mime.extension(request.mime) || '';
+        let ext =
+            path.extname(request.fileName) ||
+            mime.extension(request.mime) ||
+            '';
         if (ext.length > 0 && !ext.startsWith('.')) {
             ext = '.' + ext;
         }
@@ -73,15 +74,16 @@ export class ImageService {
     }
 
     getBucket(): Bucket {
-        const {projectId, clientEmail, privateKey} = services().config.get().gcp;
+        const { projectId, clientEmail, privateKey } =
+            services().config.get().gcp;
         const storage = new Storage({
-            projectId, credentials: {
+            projectId,
+            credentials: {
                 client_email: clientEmail,
                 private_key: privateKey,
-            }
+            },
         });
         return storage.bucket(services().config.get().s3Bucket);
-
     }
 
     async download(key: string, response: express.Response) {

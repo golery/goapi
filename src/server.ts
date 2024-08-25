@@ -10,7 +10,6 @@ console.log('Starting...v1');
 if (process.env.NODE_ENV === 'development') {
     app.use(errorHandler());
 }
- 
 
 const init = async() => {
     console.log('Env: ' + process.env.NODE_ENV);

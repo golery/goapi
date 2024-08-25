@@ -6,8 +6,8 @@ const transporter = nodemailer.createTransport({
     service: 'SendGrid',
     auth: {
         user: process.env.SENDGRID_USER,
-        pass: process.env.SENDGRID_PASSWORD
-    }
+        pass: process.env.SENDGRID_PASSWORD,
+    },
 });
 
 /**
@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
  */
 export const getContact = (req: Request, res: Response) => {
     res.render('contact', {
-        title: 'Contact'
+        title: 'Contact',
     });
 };
 
@@ -40,7 +40,7 @@ export const postContact = async (req: Request, res: Response) => {
         to: 'your@email.com',
         from: `${req.body.name} <${req.body.email}>`,
         subject: 'Contact Form',
-        text: req.body.message
+        text: req.body.message,
     };
 
     transporter.sendMail(mailOptions, (err) => {

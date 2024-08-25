@@ -1,31 +1,29 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import * as uuid from 'uuid';
 
-@Entity({tableName: 'record'})
+@Entity({ tableName: 'record' })
 export class DataRecord {
+    @PrimaryKey({ type: 'uuid' })
+    id = uuid.v4();
 
-   @PrimaryKey({ type: 'uuid' })
-   id = uuid.v4();
+    @Property({ type: 'jsonb' })
+    data = {};
 
-   @Property({ type: 'jsonb' })
-   data = {};
+    @Property()
+    appId: number;
 
+    @Property()
+    userId: number;
 
-   @Property()
-   appId: number;
+    @Property()
+    groupId?: number;
 
-   @Property()
-   userId: number;
+    @Property()
+    type: string;
 
-   @Property()
-   groupId?: number;
+    @Property()
+    createdAt = new Date();
 
-   @Property()
-   type: string;
-
-   @Property()
-   createdAt = new Date();
-
-   @Property({ onUpdate: () => new Date() })
-   updatedAt = new Date();
+    @Property({ onUpdate: () => new Date() })
+    updatedAt = new Date();
 }

@@ -6,12 +6,12 @@ interface Config {
     s3Bucket: string;
     awsAccessKeyId: string;
     awsAccessKeySecret: string;
-    postgresUrl: string
+    postgresUrl: string;
     gcp: {
         projectId: string;
         clientEmail: string;
         privateKey: string;
-    }
+    };
 }
 
 let config: Config;
@@ -23,7 +23,7 @@ export function loadConfig(): Config {
     const dotEnvPath = `/work/app-configs/goapi/${isProd() ? 'prod' : 'dev'}/env.sh`;
     if (fs.existsSync(dotEnvPath)) {
         logger.info(`Load config from ${dotEnvPath}`);
-        const result = dotenv.config({path: dotEnvPath});
+        const result = dotenv.config({ path: dotEnvPath });
         if (result.error) {
             logger.error(`Fail to load config from file ${dotEnvPath}`);
         }
