@@ -6,8 +6,9 @@ import 'reflect-metadata';
 import {getApiRouter} from './router/api';
 import { RequestContext } from '@mikro-orm/core';
 import { orm } from './services/Init';
-const app = express();
-
+import { loadConfig } from './services/ConfigService';
+export const app = express();
+loadConfig();
 app.set('port', process.env.PORT || 8200);
 app.use(cors());
 app.use(compression());

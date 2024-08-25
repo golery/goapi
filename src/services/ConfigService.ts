@@ -16,7 +16,7 @@ interface Config {
 
 let config: Config;
 
-function loadConfig(): Config {
+export function loadConfig(): Config {
     const isProd = () => process.env.NODE_ENV === 'production';
 
     // On prod/env.sh is ONLY used at local to hook to prod DB. On real prod, we use environment variable in Koeyb
@@ -49,8 +49,6 @@ function loadConfig(): Config {
     }
     return config;
 }
-
-loadConfig();
 
 export class ConfigService {
     get() {

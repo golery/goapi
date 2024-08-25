@@ -30,6 +30,10 @@ export async function initMikroOrm() {
       
     orm = await MikroORM.init(config);
 }
+
+export async function closeDb() {
+    await orm.close();
+}
 export const initDb = async () => {
     await initMikroOrm();
     const pg = parse(process.env.POSTGRES_URL);

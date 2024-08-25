@@ -5,6 +5,7 @@ import {apiHandler} from '../util/express-utils';
 import {Node} from '../entity/Node';
 import {authMiddleware} from '../middlewares/AuthMiddleware';
 import { syncRecords } from '../services/RecordService';
+import logger from '../util/logger';
 
 const upload = multer({
     limits: {
@@ -74,11 +75,12 @@ export const getAuthenticatedRouter = (): Router => {
             res.json(node);
         }));
 
-    router.post('/record/sync', apiHandler(async (req) => {
+    router.put('/record/sync', apiHandler(async (req) => {
+        logger.info('Syncing records');
         const parsedFromTime = Number.parseInt(req.query.fromTime as string ?? '0');
         const fromTime = isNaN(parsedFromTime) ? 0 : parsedFromTime;
         
-        return await syncRecords(req.ctx, fromTime, req.body, req.query.delete === 'true');    
+        return await syncRecords(req.ctx, fromTime, req.body.records, req.query.delete === 'true');    
     }));
     return router;
 };

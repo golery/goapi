@@ -9,9 +9,11 @@ async function deleteRecords(ctx: Ctx) {
   const em = orm.em;
   const groupId = ctx.groupId;
   if (groupId === undefined) {
-    throw new Error('GroupId is not defined');
+    await em.nativeDelete(DataRecord, { userId: ctx.userId });    
+  } else {
+    await em.nativeDelete(DataRecord, { groupId: ctx.groupId });    
   }
-  await em.nativeDelete(DataRecord, { groupId: ctx.groupId! });
+  
 }
 function fetchRecords(ctx: Ctx, fromTime?: Date): Promise<Record<string, DataRecord[]>> {
   const em = orm.em;
@@ -26,8 +28,9 @@ function fetchRecords(ctx: Ctx, fromTime?: Date): Promise<Record<string, DataRec
 }
  
 async function upsertRecords(ctx: Ctx,recordMap: Record<string, DataRecord[]>) {
-  console.log('Upserting records', recordMap);
+  // console.log('Upserting records', recordMap);
   const records = Object.entries(recordMap).flatMap(([type, data]) => {
+    console.log('data', data);
     return data.map(item => {
       const record = new DataRecord();
       Object.assign(record, {
