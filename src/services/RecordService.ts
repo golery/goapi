@@ -45,9 +45,8 @@ async function upsertRecords(
     ctx: Ctx,
     recordMap: Record<string, DataRecord[]>,
 ) {
-    // console.log('Upserting records', recordMap);
+    console.log('Upserting records', recordMap);
     const records = Object.entries(recordMap).flatMap(([type, data]) => {
-        console.log('data', data);
         return data.map((item) => {
             const record = new DataRecord();
             Object.assign(record, {
@@ -60,23 +59,28 @@ async function upsertRecords(
             return record;
         });
     });
-    console.log(`Upserting ${records.length} records`, records);
 
-    const em = orm.em;
-    await em.upsertMany(records);
-    console.log('Upserted records', records);
+    if (records.length > 0) {
+      console.log(`Upserting ${records.length} records`, records);
+
+      const em = orm.em;
+      await em.upsertMany(records);
+      console.log('Upserted records', records);
+    }
 }
 
 export async function syncRecords(
     ctx: Ctx,
     fromTime: number,
-    recordMap: Record<string, DataRecord[]>,
+    upsert: Record<string, DataRecord[]>,
     isDelete: boolean,
 ): Promise<{ records: Record<string, DataRecord[]>; timestamp: number }> {
     if (isDelete) {
         await deleteRecords(ctx);
     }
-    await upsertRecords(ctx, recordMap);
+    if (upsert !== undefined) {
+      await upsertRecords(ctx, upsert);
+    }
     const records = await fetchRecords(ctx, new Date(fromTime));
     return { records, timestamp: Date.now() };
 }

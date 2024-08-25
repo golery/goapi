@@ -47,6 +47,7 @@ export function loadConfig(): Config {
     if (!config.postgresUrl) {
         throw new Error('Undefined process.env.POSTGRES_URL');
     }
+    logger.info('Loaded config');
     return config;
 }
 
