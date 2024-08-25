@@ -31,6 +31,8 @@ npm run dev-js
 ## Run at local connect to prod
 ./scripts/run-image
 It can be used for testing image or just to quickly run backend at local
+## Run test
+npm run test -- -g sync
 
 # TSCONFIG
 

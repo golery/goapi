@@ -26,7 +26,13 @@ function fetchRecords(
         })
         .then((records) => {
             const dataMap = _.mapValues(_.groupBy(records, 'type'), (value) => {
-                return _.sortBy(value, ['updatedAt']);
+                return _.sortBy(value, ['updatedAt']).map(record => ({
+                  id: record.id,
+                  deleted: false,
+                  updateTime: record.updatedAt.getTime(),
+                  createTime: record.createdAt.getTime(),
+                  ...record.data,
+                } as any));
             });
             console.log(
                 `Fetch records fromTime ${fromTime}. Found ${records.length}`,
@@ -45,7 +51,7 @@ async function upsertRecords(
         return data.map((item) => {
             const record = new DataRecord();
             Object.assign(record, {
-                ...item,
+                data: item,
                 userId: ctx.userId,
                 appId: ctx.appId,
                 groupId: ctx.groupId,

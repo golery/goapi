@@ -13,7 +13,7 @@ export const authMiddleware = (
     const byPassAuth = req.url.startsWith('/record/');
 
     if (authorization === `Bearer ${MOCK_TOKEN}` || byPassAuth) {
-        const appId = req.header(APP_ID_HEADER);
+        const appId = Number.parseInt(req.header(APP_ID_HEADER));
         const groupId = req.header(GROUP_ID_HEADER);
         Object.assign(req, { ctx: { userId: 1, appId, groupId } });
         next();
