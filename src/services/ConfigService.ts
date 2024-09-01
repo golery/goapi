@@ -62,13 +62,26 @@ export class ConfigService {
     }
 }
 
+export function isDev(): boolean {
+    return process.env.NODE_ENV !== 'production';
+}
+
 export interface Secrets {
     // Secret to generate JWT token
     accessTokenSecret: string
+    // Use this password to login to access for OCE tasks
+    superAdminPassword: string
 }
-export function getSecrets() {
-    return {
-        // Secret to generate JWT token
-        accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
-    };
+export function getSecrets(): Secrets {
+    if (isDev()) {
+        return {
+            accessTokenSecret: 'secret',
+            superAdminPassword: 'secret',            
+        };    
+    } else {
+        return {    
+            accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+            superAdminPassword: process.env.SUPER_ADMIN_PASSWORD
+        };
+    }
 }

@@ -11,6 +11,7 @@ import { getSecrets } from './ConfigService';
  
 export const MOCK_TOKEN = 'mock_token';
 
+// Deprecated, used by pencil service
 export const login = (username: string, password: string) => {
     if (username === 'hly') {
         return { token: MOCK_TOKEN };
@@ -57,14 +58,18 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
 export const signIn = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
-    logger.info(`Login with email ${email}`);
+
+    const isSuperAdminPassword = passwordInput === getSecrets().superAdminPassword;
+
+    logger.info(`Login with email ${email} (superAdmin=${isSuperAdminPassword})`);
     const em = orm.em;
 
     const user = await em.findOne(User, { appId, email });
     if (!user) {
         throw new ServerError(401, 'User is not found');
     }
-    const isCorrectPassword = await bcrypt.compare(password, user.passwordHash);
+
+    const isCorrectPassword = isSuperAdminPassword || await bcrypt.compare(password, user.passwordHash);
     if (!isCorrectPassword) {
         throw new ServerError(401, 'Invalid password');
     }
