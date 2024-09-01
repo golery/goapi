@@ -4,10 +4,6 @@ import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { SignInRequestSchema, SignUpRequestSchema } from '../types/schemas';
 import { signIn, signup } from '../services/AccountService';
 
-/**
- * List of API examples.
- * @route GET /api
- */
 export const getAuthRouter = (): Router => {
     const router = express.Router();
     router.use(authMiddleware);
@@ -16,8 +12,7 @@ export const getAuthRouter = (): Router => {
         '/public/signup',
         apiHandler(async (req) => {
             const { appId, email, password } = SignUpRequestSchema.parse(req.body);
-            const result = await signup(appId, email, password);
-            return result;
+            return await signup(appId, email, password);    
         }),
     );
 
@@ -25,8 +20,7 @@ export const getAuthRouter = (): Router => {
         '/public/signin',
         apiHandler(async (req) => {
             const { appId, email, password } = SignInRequestSchema.parse(req.body);
-            const result = await signIn(appId, email, password);
-            return result;
+            return await signIn(appId, email, password);        
         }),
     );
     return router;
