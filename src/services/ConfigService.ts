@@ -51,6 +51,8 @@ export function loadConfig(): Config {
     return config;
 }
 
+
+// deprecated, secrets should be loaded from getSecrets
 export class ConfigService {
     get() {
         if (!config) {
@@ -58,4 +60,15 @@ export class ConfigService {
         }
         return config;
     }
+}
+
+export interface Secrets {
+    // Secret to generate JWT token
+    accessTokenSecret: string
+}
+export function getSecrets() {
+    return {
+        // Secret to generate JWT token
+        accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+    };
 }

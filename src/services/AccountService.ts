@@ -1,10 +1,13 @@
-import { SignUpResponse } from './../types/schemas';
+import { SignInResponse, SignUpResponse } from './../types/schemas';
 import { User } from '../entity/user.entity';
 import { orm } from './Init';
 import * as bcrypt from 'bcrypt';
 import logger from '../util/logger';
 import { isValidEmail, validatePassword } from '../util/validators';
 import { ServerError } from '../util/errors';
+import * as jwt from 'jsonwebtoken';
+import { ACCESS_TOKEN_EXPIRES_IN } from '../contants';
+import { ConfigService, getSecrets } from './ConfigService';
  
 export const MOCK_TOKEN = 'mock_token';
 
@@ -31,7 +34,7 @@ export const signup = async (emailInput: string, passwordInput: string): Promise
     }
 
     const existingUser = await em.findOne(User, { email });
-    if (existingUser !== null) {
+    if (!!existingUser) {
         throw new ServerError(400, 'User already exists');
     }
 
@@ -45,3 +48,23 @@ export const signup = async (emailInput: string, passwordInput: string): Promise
 };
 
 
+export const signIn = async (emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+    const email = emailInput.toLocaleLowerCase().trim();
+    const password = passwordInput.trim();
+    logger.info(`Login with email ${email}`);
+    const em = orm.em;
+
+    const user = await em.findOne(User, { email });
+    if (!user) {
+        throw new ServerError(401, 'User is not found');
+    }
+    const isCorrectPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isCorrectPassword) {
+        throw new ServerError(401, 'Invalid password');
+    }
+    logger.info(`Login with user ${user.id}`);
+    const token = jwt.sign({ userId: user.id }, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+    return { userId: user.id, token };
+};
+
+ 

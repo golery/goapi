@@ -11,3 +11,14 @@ export const SignUpRequestSchema = z.object({
  })
  export type SignUpResponse = z.infer<typeof SignUpResponseSchema>;
  
+ export const SignInRequestSchema = z.object({
+    email: z.string(),
+    password: z.string(), 
+ });
+ export type SignInRequest = z.infer<typeof SignInRequestSchema>;
+
+ export const SignInResponseSchema = z.object({
+    userId: z.string(),
+    token: z.string(),
+ });
+ export type SignInResponse= z.infer<typeof SignInResponseSchema>;

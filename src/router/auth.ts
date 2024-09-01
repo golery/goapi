@@ -2,8 +2,8 @@ import express, { Router } from 'express';
 import multer from 'multer';
 import { apiHandler } from '../util/express-utils';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
-import { SignUpRequestSchema } from '../types/schemas';
-import { signup } from '../services/AccountService';
+import { SignInRequestSchema, SignUpRequestSchema } from '../types/schemas';
+import { signIn, signup } from '../services/AccountService';
 
 const upload = multer({
     limits: {
@@ -24,7 +24,15 @@ export const getAuthRouter = (): Router => {
         apiHandler(async (req) => {
             const { email ,password } = SignUpRequestSchema.parse(req.body);
             const result = await signup(email, password);
-            console.log('Created user', email);
+            return result;
+        }),
+    );
+
+    router.post(
+        '/public/signin',
+        apiHandler(async (req) => {
+            const { email ,password } = SignInRequestSchema.parse(req.body);
+            const result = await signIn(email, password);
             return result;
         }),
     );
