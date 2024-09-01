@@ -32,7 +32,8 @@ npm run dev-js
 ./scripts/run-image
 It can be used for testing image or just to quickly run backend at local
 ## Run test
-npm run test -- -g sync
+npm run test
+npm run test:grep isValidEmail
 
 # TSCONFIG
 

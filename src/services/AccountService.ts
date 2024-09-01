@@ -15,7 +15,9 @@ export const login = (username: string, password: string) => {
 };
 
 
-export const signup = async (email: string, password: string): Promise<SignUpResponse> => {
+export const signup = async (emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
+    const email = emailInput.toLocaleLowerCase().trim();
+    const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
     const em = orm.em;
 
