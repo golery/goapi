@@ -49,3 +49,7 @@ npm run test:grep isValidEmail
 # DEPRECATED
 1. TypeORM is replaced by MikroOrm
 2. /api2/... is replaced by /api/....
+
+
+# DATABASE
+1. appId: number (int2 = smallint)

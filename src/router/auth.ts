@@ -1,15 +1,8 @@
 import express, { Router } from 'express';
-import multer from 'multer';
 import { apiHandler } from '../util/express-utils';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { SignInRequestSchema, SignUpRequestSchema } from '../types/schemas';
 import { signIn, signup } from '../services/AccountService';
-
-const upload = multer({
-    limits: {
-        fileSize: 1024 * 1024 * 3,
-    },
-});
 
 /**
  * List of API examples.
@@ -22,8 +15,8 @@ export const getAuthRouter = (): Router => {
     router.post(
         '/public/signup',
         apiHandler(async (req) => {
-            const { email ,password } = SignUpRequestSchema.parse(req.body);
-            const result = await signup(email, password);
+            const { appId, email, password } = SignUpRequestSchema.parse(req.body);
+            const result = await signup(appId, email, password);
             return result;
         }),
     );
@@ -31,8 +24,8 @@ export const getAuthRouter = (): Router => {
     router.post(
         '/public/signin',
         apiHandler(async (req) => {
-            const { email ,password } = SignInRequestSchema.parse(req.body);
-            const result = await signIn(email, password);
+            const { appId, email, password } = SignInRequestSchema.parse(req.body);
+            const result = await signIn(appId, email, password);
             return result;
         }),
     );

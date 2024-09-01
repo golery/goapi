@@ -7,7 +7,7 @@ import { isValidEmail, validatePassword } from '../util/validators';
 import { ServerError } from '../util/errors';
 import * as jwt from 'jsonwebtoken';
 import { ACCESS_TOKEN_EXPIRES_IN } from '../contants';
-import { ConfigService, getSecrets } from './ConfigService';
+import { getSecrets } from './ConfigService';
  
 export const MOCK_TOKEN = 'mock_token';
 
@@ -18,7 +18,11 @@ export const login = (username: string, password: string) => {
 };
 
 
-export const signup = async (emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
+function createJwt(user: User): string {
+    return jwt.sign({ userId: user.id, appId: user.appId }, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+}
+
+export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
@@ -39,22 +43,24 @@ export const signup = async (emailInput: string, passwordInput: string): Promise
     }
 
     const user = new User();
+    user.appId = appId;
     user.email = email;
     user.password = password;
     user.passwordHash = await bcrypt.hash(password, 10);
     await em.persistAndFlush(user);
+    const token = createJwt(user);
     logger.info(`Created user ${user.id}`);
-    return { userId: user.id };
+    return { appId: user.appId, userId: user.id, token };
 };
 
 
-export const signIn = async (emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+export const signIn = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Login with email ${email}`);
     const em = orm.em;
 
-    const user = await em.findOne(User, { email });
+    const user = await em.findOne(User, { appId, email });
     if (!user) {
         throw new ServerError(401, 'User is not found');
     }
@@ -63,8 +69,9 @@ export const signIn = async (emailInput: string, passwordInput: string): Promise
         throw new ServerError(401, 'Invalid password');
     }
     logger.info(`Login with user ${user.id}`);
-    const token = jwt.sign({ userId: user.id }, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
-    return { userId: user.id, token };
+    const token = createJwt(user);
+
+    return { appId: user.appId, userId: user.id, token };
 };
 
  

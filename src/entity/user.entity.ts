@@ -7,6 +7,9 @@ export class User {
     id = uuid.v4();
 
     @Property()
+    appId: number;
+    
+    @Property()
     email: string;
 
     @Property()
