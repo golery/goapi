@@ -25,7 +25,7 @@
         "@types/multer": "^1.4.7",
         "@types/uuid": "^8.3.1",
         "async": "3.2.0",
-        "bcrypt-nodejs": "0.0.3",
+        "bcrypt": "5.1.1",
         "bluebird": "3.7.2",
         "body-parser": "1.19.0",
         "compression": "1.7.4",
@@ -53,12 +53,13 @@
         "typeorm-naming-strategies": "^4.1.0",
         "uuid": "^8.3.2",
         "winston": "3.3.3",
-        "yaml": "^1.10.2"
+        "yaml": "^1.10.2",
+        "zod": "3.23.8"
     },
     "devDependencies": {
         "@mikro-orm/cli": "^6.3.6",
         "@types/async": "3.2.5",
-        "@types/bcrypt-nodejs": "0.0.31",
+        "@types/bcrypt": "5.0.2",
         "@types/bluebird": "3.5.33",
         "@types/body-parser": "1.19.0",
         "@types/chai": "^4.2.14",

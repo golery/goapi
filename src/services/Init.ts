@@ -26,6 +26,7 @@ export async function initMikroOrm() {
         metadataProvider: TsMorphMetadataProvider,
         // enable debug mode to log SQL queries and discovery information
         debug: true,
+        forceUndefined: true,
     };
 
     orm = await MikroORM.init(config);

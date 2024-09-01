@@ -3,7 +3,10 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.validate": ["javascript", "typescript"],
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
   "editor.formatOnSave": true,
   "[javascript]": {
     "editor.formatOnSave": false
@@ -21,6 +24,10 @@
     "**/coverage": true
   },
   "typescript.referencesCodeLens.enabled": true,
-  "appService.zipIgnorePattern": [".vscode{,/**}"],
-  "appService.deploySubpath": ""
+  "appService.zipIgnorePattern": [
+    ".vscode{,/**}"
+  ],
+  "appService.deploySubpath": "",
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "typescript.preferences.importModuleSpecifier": "relative"
 }
