@@ -3,7 +3,7 @@ import { User } from '../entity/user.entity';
 import { orm } from './Init';
 import * as bcrypt from 'bcrypt';
 import logger from '../util/logger';
-import { isValidEmail, isValidPassword } from '../util/validators';
+import { isValidEmail, validatePassword } from '../util/validators';
 import { ServerError } from '../util/errors';
  
 export const MOCK_TOKEN = 'mock_token';
@@ -25,8 +25,9 @@ export const signup = async (emailInput: string, passwordInput: string): Promise
         throw new ServerError(400, 'Invalid email');
     }
 
-    if (!isValidPassword(password)) {
-        throw new ServerError(400, 'Invalid password');
+    const passwordValid = validatePassword(password);
+    if (passwordValid !== undefined) {
+        throw new ServerError(400, passwordValid);
     }
 
     const existingUser = await em.findOne(User, { email });

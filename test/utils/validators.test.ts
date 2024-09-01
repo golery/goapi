@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import { describe } from 'mocha';
-import { isValidEmail, isValidPassword } from '../../src/util/validators';
+import { isValidEmail, validatePassword } from '../../src/util/validators';
 
 describe('validators', function () {
     it('#isValidEmail', async () => {            
@@ -14,18 +14,19 @@ describe('validators', function () {
 
     it('#isValidPassword', async () => {       
         // at least 8 chars, 1 lower case, 1 upper case, 1 number     
-        assert.isUndefined(isValidPassword('Aa#12345'));
-        assert.isUndefined(isValidPassword('A_a_bc-de#!12345'));
+        assert.isUndefined(validatePassword('Aa!12345'));
+        assert.isUndefined(validatePassword('A_a_bc-de#!12345'));
+    
 
         // fails for 7 chars
-        assert.equal(isValidPassword('Aa#1234'), 'Password must be at least 8 characters');
+        assert.equal(validatePassword('Aa#1234'), 'Password must be at least 8 characters');
         // fails for > 20 chars
-        assert.equal(isValidPassword('Aa#12345678901234567890'), 'Password must be at most 20 characters');    
+        assert.equal(validatePassword('Aa#12345678901234567890'), 'Password must be at most 20 characters');    
         // fails for no upper case
-        assert.equal(isValidPassword('aa#12345'), 'Password must contain at least one uppercase letter');
+        assert.equal(validatePassword('aa#12345'), 'Password must contain at least one uppercase letter');
         // fails for no lower case
-        assert.equal(isValidPassword('AA#12345'), 'Password must contain at least one lowercase letter');
+        assert.equal(validatePassword('AA#12345'), 'Password must contain at least one lowercase letter');
         // fails for no special characters
-        assert.equal(isValidPassword('Aab12345'), 'Password must contain at least one special character');
+        assert.equal(validatePassword('Aab12345'), 'Password must contain at least one special character');
     });
 });
