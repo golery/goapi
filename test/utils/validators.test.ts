@@ -14,15 +14,18 @@ describe('validators', function () {
 
     it('#isValidPassword', async () => {       
         // at least 8 chars, 1 lower case, 1 upper case, 1 number     
-        assert.isTrue(isValidPassword('Aa#12345'));
+        assert.isUndefined(isValidPassword('Aa#12345'));
+        assert.isUndefined(isValidPassword('A_a_bc-de#!12345'));
 
         // fails for 7 chars
-        assert.isFalse(isValidPassword('Aa#1234'));
+        assert.equal(isValidPassword('Aa#1234'), 'Password must be at least 8 characters');
+        // fails for > 20 chars
+        assert.equal(isValidPassword('Aa#12345678901234567890'), 'Password must be at most 20 characters');    
         // fails for no upper case
-        assert.isFalse(isValidPassword('aa#12345'));
+        assert.equal(isValidPassword('aa#12345'), 'Password must contain at least one uppercase letter');
         // fails for no lower case
-        assert.isFalse(isValidPassword('AA#12345'));
+        assert.equal(isValidPassword('AA#12345'), 'Password must contain at least one lowercase letter');
         // fails for no special characters
-        assert.isFalse(isValidPassword('Aab12345'));
+        assert.equal(isValidPassword('Aab12345'), 'Password must contain at least one special character');
     });
 });
