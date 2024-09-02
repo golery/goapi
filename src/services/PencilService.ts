@@ -1,6 +1,6 @@
 import { Node } from '../entity/Node';
 import { BadRequestError } from '../util/exceptions';
-import { dataSource, bookRepo, nodeRepo } from './Init';
+import { dataSource, bookRepo, nodeRepo } from './db';
 import { Repository } from 'typeorm';
 
 const APP_PENCIL = 1;

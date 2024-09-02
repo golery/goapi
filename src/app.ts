@@ -5,7 +5,7 @@ import cors from 'cors';
 import 'reflect-metadata';
 import {getApiRouter} from './router/api';
 import { RequestContext } from '@mikro-orm/core';
-import { orm } from './services/Init';
+import { getEm, orm } from './services/db';
 import { loadConfig } from './services/ConfigService';
 export const app = express();
 loadConfig();
@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use((req, res, next) => {
     res.locals.user = req.user;
     // fork orm.em for each request
-    RequestContext.create(orm.em, next);
+    RequestContext.create(getEm(), next);
 });
 
 // api2 is deprecated (pencil still uses it, also check the mobile side)

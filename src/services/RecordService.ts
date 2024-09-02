@@ -2,11 +2,11 @@
 
 import { Ctx } from './../types/context.d';
 import { DataRecord } from '../entity/record.entity';
-import { orm } from './Init';
+import { getEm, orm } from './db';
 import * as _ from 'lodash';
 
 async function deleteRecords(ctx: Ctx) {
-    const em = orm.em;
+    const em = getEm();
     const groupId = ctx.groupId;
     if (groupId === undefined) {
         await em.nativeDelete(DataRecord, { userId: ctx.userId });
@@ -18,7 +18,7 @@ function fetchRecords(
     ctx: Ctx,
     fromTime?: Date,
 ): Promise<Record<string, DataRecord[]>> {
-    const em = orm.em;
+    const em = getEm();
     return em
         .find(DataRecord, {
             groupId: ctx.groupId,
@@ -63,7 +63,7 @@ async function upsertRecords(
     if (records.length > 0) {
       console.log(`Upserting ${records.length} records`, records);
 
-      const em = orm.em;
+      const em = getEm();
       await em.upsertMany(records);
       console.log('Upserted records', records);
     }

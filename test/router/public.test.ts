@@ -4,7 +4,7 @@ import request from 'supertest';
 import * as uuid from 'uuid';
 import { app } from '../../src/app';
 import { loadConfig } from '../../src/services/ConfigService';
-import { closeDb, initMikroOrm } from '../../src/services/Init';
+import { closeDb, initMikroOrm } from '../../src/services/db';
 
 describe('router/public', function () {
     before(async () => {

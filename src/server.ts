@@ -1,6 +1,6 @@
 import errorHandler from 'errorhandler';
 import app from './app';
-import {initDb} from './services/Init';
+import {initDb} from './services/db';
 
 console.log('Starting...v1');
 

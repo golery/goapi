@@ -1,6 +1,6 @@
 import { User } from '../../src/entity/user.entity';
 import { createJwt } from '../../src/services/AccountService';
-import { orm } from '../../src/services/Init';
+import { orm } from '../../src/services/db';
 import * as uuid from 'uuid';
 
 export const testAppId = 100;

@@ -1,6 +1,6 @@
 import { SignInResponse, SignUpResponse } from './../types/schemas';
 import { User } from '../entity/user.entity';
-import { orm } from './Init';
+import { getEm, orm } from './db';
 import * as bcrypt from 'bcrypt';
 import * as _ from 'lodash';
 import logger from '../util/logger';
@@ -47,7 +47,7 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
-    const em = orm.em;
+    const em = getEm();
 
     if (!isValidEmail(email)) {
         throw new ServerError(400, 'Invalid email');
@@ -82,7 +82,7 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     const isSuperAdminPassword = passwordInput === getSecrets().superAdminPassword;
 
     logger.info(`Login with email ${email} (superAdmin=${isSuperAdminPassword})`);
-    const em = orm.em;
+    const em = getEm();
 
     const user = await em.findOne(User, { appId, email });
     if (!user) {

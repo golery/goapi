@@ -1,7 +1,7 @@
 import { app } from './../../src/app';
 import request from 'supertest';
 import { describe } from 'mocha';
-import { closeDb, initMikroOrm } from '../../src/services/Init';
+import { closeDb, initMikroOrm } from '../../src/services/db';
 import { loadConfig } from '../../src/services/ConfigService';
 import { APP_ID_HEADER, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';

@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { Book } from '../entity/Book';
 import { Node } from '../entity/Node';
-import { MikroORM } from '@mikro-orm/core';
+import { EntityManager, MikroORM } from '@mikro-orm/core';
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import logger from '../util/logger';
@@ -65,3 +65,7 @@ export const initDb = async () => {
     nodeRepo = dataSource.getRepository(Node);
     bookRepo = dataSource.getRepository(Book);
 };
+
+export function getEm(): EntityManager {
+    return orm.em;
+}
