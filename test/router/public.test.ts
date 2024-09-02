@@ -1,5 +1,5 @@
-import { SignInRequest } from './../../src/types/schemas';
-import { app } from './../../src/app';
+import { SignInRequest } from '../../src/types/schemas';
+import { app } from '../../src/app';
 import request from 'supertest';
 import { describe } from 'mocha';
 import { closeDb, initMikroOrm } from '../../src/services/Init';
@@ -21,21 +21,31 @@ describe('router/public', function () {
         it('#it.signs up then signs in', async () => {
             const email = `test+${uuid.v4()}@test.com`;
             const password = 'Ab!12345';
+            const appId = 100;
 
             // when sign up for a new account
             const { body: signUpResponse } = await request(app)
                 .post('/api/public/signup')
-                .send({ appId: 1, email, password })
+                .send({ appId, email, password })
                 .expect(200);        
             // then there is a token in response    
             assert.isNotEmpty(signUpResponse.token);
 
             // then can sign in with the new account
-            const { body: SignInResponse } = await request(app)
+            const { body: signInResponse } = await request(app)
                 .post('/api/public/signin')
-                .send({ appId: 1, email, password })
+                .send({ appId, email, password })
                 .expect(200);
-            assert.isNotEmpty(signUpResponse.token);
+            assert.isNotEmpty(signInResponse.token);
+
+            // then the new token can be used for authentication
+            const { body: pingResponse } = await request(app)
+                .get('/api/ping')       
+                .set('Authorization', `Bearer ${signInResponse.token}`)         
+                .expect(200);
+
+            assert.equal(pingResponse.appId, appId);
+            assert.isTrue(pingResponse.userId > 0);
         });
     });
 }); 

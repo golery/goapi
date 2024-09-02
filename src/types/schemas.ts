@@ -8,7 +8,7 @@ export const SignUpRequestSchema = z.object({
 
 export interface SignUpResponse {
     appId: number,
-    userId: string,
+    userId: number,
     token: string,
 }
 
@@ -21,6 +21,6 @@ export const SignInRequestSchema = z.object({
 
 export interface SignInResponse {
     appId: number,
-    userId: string,
+    userId: number,
     token: string,
 }

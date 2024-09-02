@@ -18,7 +18,7 @@ export class DataRecord {
     @Property()
     groupId?: number;
 
-    @Property()
+    @Property() 
     type: string;
 
     @Property()

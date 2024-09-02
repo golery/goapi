@@ -2,6 +2,7 @@ import { SignInResponse, SignUpResponse } from './../types/schemas';
 import { User } from '../entity/user.entity';
 import { orm } from './Init';
 import * as bcrypt from 'bcrypt';
+import * as _ from 'lodash';
 import logger from '../util/logger';
 import { isValidEmail, validatePassword } from '../util/validators';
 import { ServerError } from '../util/errors';
@@ -18,9 +19,23 @@ export const login = (username: string, password: string) => {
     }
 };
 
+interface JwtPayload {
+    userId: number; 
+    appId: number;
+}
+ function createJwt(user: User): string {
+    const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId };
+    return jwt.sign(jwtPayload, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+}
 
-function createJwt(user: User): string {
-    return jwt.sign({ userId: user.id, appId: user.appId }, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
+export function verifyJwt(authorizationHeader?: string): JwtPayload | undefined {
+    if (authorizationHeader === undefined || !authorizationHeader.startsWith('Bearer ')) {
+        return undefined;
+    }
+    const token = authorizationHeader.substring(7);
+    const verifyResult = jwt.verify(token, getSecrets().accessTokenSecret);
+    const jwtPayload = _.pick(verifyResult, ['userId', 'appId']);
+    return jwtPayload as JwtPayload;
 }
 
 export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignUpResponse> => {

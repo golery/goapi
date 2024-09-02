@@ -3,12 +3,12 @@ import * as uuid from 'uuid';
 
 @Entity({ tableName: 'user' })
 export class User {
-    @PrimaryKey({ type: 'uuid' })
-    id = uuid.v4();
+    @PrimaryKey()
+    id: number;
 
     @Property()
     appId: number;
-    
+
     @Property()
     email: string;
 

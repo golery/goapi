@@ -7,6 +7,7 @@ import { Node } from '../entity/Node';
 import { MikroORM } from '@mikro-orm/core';
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import logger from '../util/logger';
 
 export let dataSource: DataSource;
 export let nodeRepo: Repository<Node>;
@@ -29,13 +30,15 @@ export async function initMikroOrm() {
         forceUndefined: true,
     };
 
+    logger.info('Initing MikroOrm...');
     orm = await MikroORM.init(config);
+    logger.info('Inited MikroOrm.');
 }
 
 export async function closeDb() {
     await orm.close();
 }
-export const initDb = async () => {
+export const initDb = async () => { 
     await initMikroOrm();
     const pg = parse(process.env.POSTGRES_URL);
     console.log(`Connect to postgres ${pg.host}`);

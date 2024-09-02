@@ -121,5 +121,13 @@ export const getAuthenticatedRouter = (): Router => {
             );
         }),
     );
+
+    // ping and return current authenticated user
+    router.get(
+        '/ping',
+        apiHandler(async (req) => {            
+            return req.ctx;        
+        }),
+    );
     return router;
 };
