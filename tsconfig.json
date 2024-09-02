@@ -15,7 +15,8 @@
         "baseUrl": "./src",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "strict": true,
     },
     "exclude": [
         "dist",

@@ -1,5 +1,5 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
-import * as uuid from 'uuid';
+import * as uuid from 'uuid'; 
 
 @Entity({ tableName: 'record' })
 export class DataRecord {
@@ -10,16 +10,16 @@ export class DataRecord {
     data = {};
 
     @Property()
-    appId: number;
+    appId!: number;
 
     @Property()
-    userId: number;
+    userId!: number;
 
     @Property()
     groupId?: number;
 
     @Property() 
-    type: string;
+    type!: string;
 
     @Property()
     createdAt = new Date();

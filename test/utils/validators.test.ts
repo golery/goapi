@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import { describe } from 'mocha';
-import { isValidEmail, validatePassword } from '../../src/util/validators';
+import { isValidEmail, validatePassword } from '../../src/utils/validators';
 
 describe('validators', function () {
     it('#isValidEmail', async () => {            

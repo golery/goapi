@@ -2,6 +2,7 @@ import express from 'express';
 import { MOCK_TOKEN, verifyJwt } from '../services/AccountService';
 import { APP_ID_HEADER, GROUP_ID_HEADER } from '../contants';
 import { Ctx } from '../types/context';
+import { parseIntOpt } from '../utils/parser';
 
 export const authMiddleware = (
     req: express.Request,
@@ -9,10 +10,11 @@ export const authMiddleware = (
     next: express.NextFunction,
 ): void => {
     const authorizationHeader = req.header('Authorization');
-    const groupId = req.header(GROUP_ID_HEADER) ? parseInt(req.header(GROUP_ID_HEADER)) : undefined;
+
+    const groupId = parseIntOpt(req.header(GROUP_ID_HEADER));
 
     if (authorizationHeader === `Bearer ${MOCK_TOKEN}`) {
-        const appId = Number.parseInt(req.header(APP_ID_HEADER));        
+        const appId = parseIntOpt(req.header(APP_ID_HEADER));        
         Object.assign(req, { ctx: { userId: 1, appId, groupId } });
         next();
         return;

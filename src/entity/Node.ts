@@ -24,32 +24,32 @@ const childrenTransformer = {
 @Entity()
 export class Node {
     @PrimaryColumn()
-    id: number;
+    id!: number;
     @Column()
     @CreateDateColumn()
-    createTime: Date;
+    createTime!: Date;
     @Column()
     @UpdateDateColumn()
-    updateTime: Date;
+    updateTime!: Date;
     @Column()
-    app: number;
+    app!: number;
     @Column()
-    userId: string;
+    userId!: string;
     // always null
     @Column()
-    type: string | null;
+    type!: string | null;
     @Column({ name: 'space' })
-    bookId: number;
+    bookId!: number;
     @Column()
-    parentId: number | null;
+    parentId!: number | null;
     @Column('text', { transformer: childrenTransformer })
-    children: number[] | null;
+    children!: number[] | null;
     // What is title used for?
     @Column()
-    title: string | null;
+    title!: string | null;
     // Name is displayed on the tree
     @Column()
-    name: string | null;
+    name!: string | null;
     @Column()
     text: string | null;
 }

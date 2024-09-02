@@ -1,11 +1,11 @@
 import express, { Router } from 'express';
 import { services } from '../services/Factory';
 import multer from 'multer';
-import { apiHandler } from '../util/express-utils';
+import { apiHandler } from '../utils/express-utils';
 import { Node } from '../entity/Node';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { syncRecords } from '../services/RecordService';
-import logger from '../util/logger';
+import logger from '../utils/logger';
 
 const upload = multer({
     limits: {
@@ -115,7 +115,7 @@ export const getAuthenticatedRouter = (): Router => {
 
             return await syncRecords(
                 req.ctx,
-                
+
                 fromTime,
                 req.body.records,
                 req.query.delete === 'true',

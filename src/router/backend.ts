@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 import { services } from '../services/Factory';
-import { apiHandler } from '../util/express-utils';
+import { apiHandler } from '../utils/express-utils';
 
 /**
  * Backend router are API for Verxel backend

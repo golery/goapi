@@ -6,11 +6,11 @@ export class Book {
     @PrimaryColumn()
     id?: number;
     @Column()
-    code: string;
+    code!: string;
     @Column()
-    rootId: number;
+    rootId!: number;
     @Column()
-    name: string;
+    name!: string;
     @Column()
-    order: number;
+    order!: number;
 }

@@ -1,5 +1,5 @@
 import { Node } from '../entity/Node';
-import { BadRequestError } from '../util/exceptions';
+import { BadRequestError } from '../utils/exceptions';
 import { dataSource, bookRepo, nodeRepo } from './db';
 import { Repository } from 'typeorm';
 
@@ -54,7 +54,7 @@ const findSubTreeNodeIds = async (
               }),
           )
         : [];
-    return [node.id, ...childrenIds.flat()];
+    return [node.id, ...childrenIds.flat() as any];
 };
 
 export class PencilService {
@@ -64,15 +64,15 @@ export class PencilService {
 
     async getPublicNodeIds(): Promise<number[]> {
         const book = await this.getPublishedBook();
-        const nodes = await nodeRepo.find({ where: { bookId: book.id } });
+        const nodes = await nodeRepo.find({ where: { bookId: book!.id } });
         return nodes.map((node) => node.id);
     }
 
     async getPublicNode(nodeId: number): Promise<Node> {
         const book = await this.getPublishedBook();
         return await nodeRepo.findOne({
-            where: { id: nodeId, bookId: book.id },
-        });
+            where: { id: nodeId, bookId: book!.id },
+        }) as any;
     }
 
     async moveNode(
@@ -102,7 +102,7 @@ export class PencilService {
                 );
             } else {
                 const oldParent = await nodeRepo.findOneOrFail({
-                    where: { id: node.parentId },
+                    where: { id: node.parentId } as any,
                 });
                 const newParent = await nodeRepo.findOneOrFail({
                     where: { id: newParentId },
@@ -123,7 +123,7 @@ export class PencilService {
                             where: { id: iter },
                         });
                         console.log(`Check node ${iter} ${node.name}`);
-                        iter = node.parentId;
+                        iter = node.parentId as any;
                     }
                 };
 
@@ -161,7 +161,7 @@ export class PencilService {
 
                 await Promise.all([
                     nodeRepo.update(oldParent.id, {
-                        children: oldParent.children.filter(
+                        children: oldParent.children!.filter(
                             (childId) => childId != node.id,
                         ),
                     }),
@@ -189,14 +189,14 @@ export class PencilService {
                 where: { id: node.parentId },
             });
             await nodeRepo.update(parent.id, {
-                children: parent.children.filter((id) => id !== nodeId),
+                children: parent.children!.filter((id) => id !== nodeId),
             });
 
             const subTreeNodeIds = await findSubTreeNodeIds(nodeId, nodeRepo);
             console.log('Deleting nodes ', subTreeNodeIds);
-            await nodeRepo.delete(subTreeNodeIds);
+            await nodeRepo.delete(subTreeNodeIds!);
             return subTreeNodeIds;
-        });
+        }) as any;
     }
 
     async getBooks() {
@@ -210,7 +210,7 @@ export class PencilService {
     private async generateNodeId(): Promise<number> {
         const { nodeId } = await dataSource
             .createQueryBuilder()
-            .select("nextval('seq_node_id')", 'nodeId')
+            .select('nextval(\'seq_node_id\')', 'nodeId')
             .from('seq_node_id', 'seq')
             .getRawOne();
         return parseInt(nodeId);
@@ -280,10 +280,10 @@ export class PencilService {
         const existing = await nodeRepo.findOneOrFail({
             where: { id: node.id },
         });
-        delete node.userId;
-        delete node.app;
-        delete node.createTime;
-        delete node.updateTime;
+        delete (node as any).userId;
+        delete (node as any).app;
+        delete (node as any).createTime;
+        delete (node as any).updateTime;
         return await nodeRepo.save({ ...existing, ...node });
     }
 }

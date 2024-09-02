@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { apiHandler } from '../util/express-utils';
+import { apiHandler } from '../utils/express-utils';
 import { login } from '../services/AccountService';
 import { getAuthenticatedRouter } from './authenticated';
 import { services } from '../services/Factory';

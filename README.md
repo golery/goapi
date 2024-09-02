@@ -53,3 +53,9 @@ npm run test:grep isValidEmail
 
 # DATABASE
 1. appId: number (int2 = smallint)
+
+
+# RELEASE
+1. ./script/release.sh
+2. Build docker image golery/api, publish it to docker
+3. Call koeyb to restart

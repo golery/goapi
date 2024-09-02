@@ -24,3 +24,9 @@ export interface SignInResponse {
     userId: number,
     token: string,
 }
+
+export const SecretsSchema = z.object({
+    accessTokenSecret: z.string(),
+    superAdminPassword: z.string(),
+    postgresUrl: z.string(),
+});

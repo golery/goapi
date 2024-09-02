@@ -4,19 +4,19 @@ import * as uuid from 'uuid';
 @Entity({ tableName: 'user' })
 export class User {
     @PrimaryKey({ autoincrement: true })
-    id: number;
+    id!: number;
 
     @Property()
-    appId: number;
+    appId!: number;
 
     @Property()
-    email: string;
+    email!: string;
 
     @Property()
-    password: string;
+    password!: string;
 
     @Property()
-    passwordHash: string;
+    passwordHash!: string;
 
     @Property()
     createdAt = new Date();

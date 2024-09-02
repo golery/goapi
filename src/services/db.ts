@@ -7,7 +7,8 @@ import { Node } from '../entity/Node';
 import { EntityManager, MikroORM, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
-import logger from '../util/logger';
+import logger from '../utils/logger';
+import { getSecrets } from './ConfigService';
 
 export let dataSource: DataSource;
 export let nodeRepo: Repository<Node>;
@@ -18,7 +19,7 @@ export async function initMikroOrm() {
     const config: Options = {
         driver: PostgreSqlDriver,
         // dbName: 'dev',
-        clientUrl: process.env.POSTGRES_URL,
+        clientUrl: getSecrets().postgresUrl,
         // folder-based discovery setup, using common filename suffix
         entities: ['dist/**/*.entity.js'],
         // this is used during development when running with ts-node
@@ -45,7 +46,7 @@ export async function closeDb() {
 }
 export const initDb = async () => { 
     await initMikroOrm();
-    const pg = parse(process.env.POSTGRES_URL);
+    const pg = parse(getSecrets().postgresUrl);
     console.log(`Connect to postgres ${pg.host}`);
     // at local use ts-node, on prod use dist/.js
     const entityPath = __filename.endsWith('.js')
@@ -53,11 +54,11 @@ export const initDb = async () => {
         : 'src/entity/*.ts';
     const opts: PostgresConnectionOptions = {
         type: 'postgres',
-        host: pg.host,
-        port: parseInt(pg.port),
+        host: pg.host!,
+        port: parseInt(pg.port!),
         username: pg.user,
         password: pg.password,
-        database: pg.database,
+        database: pg.database!,
         entities: [entityPath],
         synchronize: false,
         logging: false,
