@@ -76,7 +76,7 @@ export interface Secrets {
 
 export function getSecrets(): Secrets {    
     let secrets : Secrets = SecretsSchema.parse({
-        accessTokenSecret: '' as any,
+        accessTokenSecret: 'secret',
         superAdminPassword: 'secret',   
         postgresUrl: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/postgres',         
     });
