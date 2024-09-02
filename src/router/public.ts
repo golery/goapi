@@ -1,23 +1,21 @@
 import express, { Router } from 'express';
 import { apiHandler } from '../util/express-utils';
-import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { SignInRequestSchema, SignUpRequestSchema } from '../types/schemas';
 import { signIn, signup } from '../services/AccountService';
 
-export const getAuthRouter = (): Router => {
+export const getPublicRouter = (): Router => {
     const router = express.Router();
-    router.use(authMiddleware);
-
     router.post(
-        '/public/signup',
+        '/signup',
         apiHandler(async (req) => {
+            console.log('====>');
             const { appId, email, password } = SignUpRequestSchema.parse(req.body);
             return await signup(appId, email, password);    
         }),
     );
 
     router.post(
-        '/public/signin',
+        '/signin',
         apiHandler(async (req) => {
             const { appId, email, password } = SignInRequestSchema.parse(req.body);
             return await signIn(appId, email, password);        

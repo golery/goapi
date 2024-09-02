@@ -4,7 +4,7 @@ import { login } from '../services/AccountService';
 import { getAuthenticatedRouter } from './authenticated';
 import { services } from '../services/Factory';
 import { getBackendRouter } from './backend';
-import { getAuthRouter } from './auth';
+import { getPublicRouter } from './public';
 
 /**
  * List of API examples.
@@ -39,6 +39,6 @@ export const getApiRouter = (): Router => {
 
     router.use('/', getAuthenticatedRouter());
 
-    router.use('/', getAuthRouter());
+    router.use('/public', getPublicRouter());
     return router;
 };
