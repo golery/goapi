@@ -15,6 +15,7 @@ export const apiHandler =
         execute(req as ApiRequest, res)
             .then((data) => data && res.send(data))
             .catch((err) => {
+                logger.error(`Fail to handle request ${req.url}: ${err.message}`, { err });
                 if (err instanceof ServerError) {
                     res.status(err.code).json({
                         code: err.code,

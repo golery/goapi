@@ -37,8 +37,9 @@ export const getApiRouter = (): Router => {
 
     router.use('/backend', getBackendRouter());
 
-    router.use('/', getAuthenticatedRouter());
-
     router.use('/public', getPublicRouter());
+
+    router.use('/', getAuthenticatedRouter());
     return router;
 };
+ 

@@ -14,7 +14,8 @@
         "build": "tsc",
         "dev-js": "tsc && node dist/server.js",
         "test": "ts-mocha test/**/*.ts",
-        "test:grep": "ts-mocha test/**/*.ts --grep",
+        "test:grep": "mocha --require ts-node/register/transpile-only --inspect=5000 test/**/*.ts --grep",
+        "test:debug": "mocha --require ts-node/register/transpile-only --inspect-brk=5000 test/**/*.ts --grep",
         "fmt": "prettier --write src/**/*.ts test/**/*.ts"
     },
     "dependencies": {

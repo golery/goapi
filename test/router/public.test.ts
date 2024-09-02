@@ -1,3 +1,4 @@
+import { SignInRequest } from './../../src/types/schemas';
 import { app } from './../../src/app';
 import request from 'supertest';
 import { describe } from 'mocha';
@@ -16,14 +17,25 @@ describe('router/public', function () {
         console.log('DONE');
         await closeDb();
     });
-    describe('signup', function () {
-        it('#signup', async () => {
-            const random = uuid.v4();
-            const response: any = await request(app)
-                .put('/api/public/signup')            
-                .send({ appId: 1, email: 'test' + random + '@test.com', password: 'test' })
+    describe('signup/signin', function () {
+        it('#it.signs up then signs in', async () => {
+            const email = `test+${uuid.v4()}@test.com`;
+            const password = 'Ab!12345';
+
+            // when sign up for a new account
+            const { body: signUpResponse } = await request(app)
+                .post('/api/public/signup')
+                .send({ appId: 1, email, password })
+                .expect(200);        
+            // then there is a token in response    
+            assert.isNotEmpty(signUpResponse.token);
+
+            // then can sign in with the new account
+            const { body: SignInResponse } = await request(app)
+                .post('/api/public/signin')
+                .send({ appId: 1, email, password })
                 .expect(200);
-                console.log(response.body.records.test);        
+            assert.isNotEmpty(signUpResponse.token);
         });
     });
-});
+}); 

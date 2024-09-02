@@ -8,7 +8,6 @@ export const getPublicRouter = (): Router => {
     router.post(
         '/signup',
         apiHandler(async (req) => {
-            console.log('====>');
             const { appId, email, password } = SignUpRequestSchema.parse(req.body);
             return await signup(appId, email, password);    
         }),
