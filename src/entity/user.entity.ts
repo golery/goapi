@@ -3,7 +3,7 @@ import * as uuid from 'uuid';
 
 @Entity({ tableName: 'user' })
 export class User {
-    @PrimaryKey()
+    @PrimaryKey({ autoincrement: true })
     id: number;
 
     @Property()

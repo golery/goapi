@@ -9,22 +9,22 @@ export const authMiddleware = (
     next: express.NextFunction,
 ): void => {
     const authorizationHeader = req.header('Authorization');
+    const groupId = req.header(GROUP_ID_HEADER) ? parseInt(req.header(GROUP_ID_HEADER)) : undefined;
 
     if (authorizationHeader === `Bearer ${MOCK_TOKEN}`) {
-        const appId = Number.parseInt(req.header(APP_ID_HEADER));
-        const groupId = req.header(GROUP_ID_HEADER);
+        const appId = Number.parseInt(req.header(APP_ID_HEADER));        
         Object.assign(req, { ctx: { userId: 1, appId, groupId } });
         next();
         return;
-    }
+    } 
 
     if (authorizationHeader && authorizationHeader.startsWith('Bearer ')) {
-        const payload = verifyJwt(authorizationHeader);
+        const payload = verifyJwt(authorizationHeader);    
         if (!payload) {
             res.status(401).send('Invalid Authorization header');
             return;
         }
-        const ctx: Ctx = { appId: payload.appId, userId: payload.userId };
+        const ctx: Ctx = { appId: payload.appId, userId: payload.userId, groupId};    
         Object.assign(req, { ctx });
         next();
         return;

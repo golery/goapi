@@ -115,6 +115,7 @@ export const getAuthenticatedRouter = (): Router => {
 
             return await syncRecords(
                 req.ctx,
+                
                 fromTime,
                 req.body.records,
                 req.query.delete === 'true',

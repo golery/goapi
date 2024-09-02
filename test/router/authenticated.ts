@@ -3,11 +3,14 @@ import request from 'supertest';
 import { describe } from 'mocha';
 import { closeDb, initMikroOrm } from '../../src/services/Init';
 import { loadConfig } from '../../src/services/ConfigService';
-import { APP_ID_HEADER } from '../../src/contants';
+import { APP_ID_HEADER, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
+import { createUser as setupUser } from '../testutils/setup';
+import * as _ from 'lodash';
+import { getRandomInt } from '../testutils/random';
 
-describe('authenticated', function () {
+describe('router/authenticated', function () {
     before(async () => {
         await loadConfig();
         await initMikroOrm();
@@ -18,15 +21,17 @@ describe('authenticated', function () {
     });
     describe('record', function () {
         it('#sync', async () => {
+            const { accessToken } = await setupUser();
             const random = uuid.v4();
             const response: any = await request(app)
                 .put('/api/record/sync')
-                .set(APP_ID_HEADER, '-1')                                    
+                .set('Authorization', `Bearer ${accessToken}`)
+                .set(GROUP_ID_HEADER, `${getRandomInt()}`)   
                 .send({ records: { test: [{ random }] } })
                 .expect(200);
                 console.log(response.body.records.test);
-            const saved = response.body.records.test.find(o => o.data.random === random);
-            assert.deepEqual(saved, { random});
+            const saved = response.body.records.test.find(o => o.random === random);
+            assert.deepEqual(_.pick(saved, ['random']), { random});
         });
     });
 });

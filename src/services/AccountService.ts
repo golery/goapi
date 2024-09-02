@@ -23,7 +23,7 @@ interface JwtPayload {
     userId: number;
     appId: number;
 }
-function createJwt(user: User): string {
+export function createJwt(user: User): string {
     const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId };
     return jwt.sign(jwtPayload, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
 }
