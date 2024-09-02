@@ -36,20 +36,20 @@ export class Node {
     @Column()
     userId!: string;
     // always null
-    @Column()
+    @Column({type: "varchar", nullable: true})
     type!: string | null;
     @Column({ name: 'space' })
     bookId!: number;
-    @Column()
+    @Column({type: "integer", nullable: true})
     parentId!: number | null;
     @Column('text', { transformer: childrenTransformer })
     children!: number[] | null;
     // What is title used for?
-    @Column()
+    @Column({type: "varchar", nullable: true})
     title!: string | null;
     // Name is displayed on the tree
-    @Column()
+    @Column({type: "varchar", nullable: true})
     name!: string | null;
-    @Column()
-    text: string | null;
+    @Column({type: "varchar", nullable: true})
+    text!: string | null;
 }
