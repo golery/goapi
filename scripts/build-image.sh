@@ -1,1 +1,1 @@
-docker build -t golery/goapi2 .
+docker build -t golery/goapi .

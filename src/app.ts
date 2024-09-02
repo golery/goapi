@@ -7,6 +7,7 @@ import {getApiRouter} from './router/api';
 import { RequestContext } from '@mikro-orm/core';
 import { getEm, orm } from './services/db';
 import { loadConfig } from './services/ConfigService';
+import 'reflect-metadata';
 export const app = express();
 loadConfig();
 app.set('port', process.env.PORT || 8200);

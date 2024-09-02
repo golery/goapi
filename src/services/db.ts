@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { Book } from '../entity/Book';
 import { Node } from '../entity/Node';
-import { EntityManager, MikroORM } from '@mikro-orm/core';
+import { EntityManager, MikroORM, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import logger from '../util/logger';
@@ -21,13 +21,18 @@ export async function initMikroOrm() {
         clientUrl: process.env.POSTGRES_URL,
         // folder-based discovery setup, using common filename suffix
         entities: ['dist/**/*.entity.js'],
+        // this is used during development when running with ts-node
         entitiesTs: ['src/**/*.entity.ts'],
         // we will use the ts-morph reflection, an alternative to the default reflect-metadata provider
         // check the documentation for their differences: https://mikro-orm.io/docs/metadata-providers
-        metadataProvider: TsMorphMetadataProvider,
+        // metadataProvider: TsMorphMetadataProvider,
+        metadataProvider: ReflectMetadataProvider,
+
         // enable debug mode to log SQL queries and discovery information
         debug: true,
         forceUndefined: true,
+
+        
     };
 
     logger.info('Initing MikroOrm...');
