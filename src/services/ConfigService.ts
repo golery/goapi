@@ -73,18 +73,19 @@ export interface Secrets {
     // password embedded postgres url
     postgresUrl: string
 }
+
 export function getSecrets(): Secrets {    
-    let secrets : Secrets = {
-        accessTokenSecret: 'secret',
+    let secrets : Secrets = SecretsSchema.parse({
+        accessTokenSecret: '' as any,
         superAdminPassword: 'secret',   
         postgresUrl: process.env.POSTGRES_URL || 'postgres://postgres:postgres@localhost:5432/postgres',         
-    };
+    });
     if (isProd()) {
-        secrets = {    
-            accessTokenSecret: process.env.ACCESS_TOKEN_SECRET || '',
-            superAdminPassword: process.env.SUPER_ADMIN_PASSWORD || '',
-            postgresUrl: process.env.POSTGRES_URL || '',
-        };
+        secrets = SecretsSchema.parse({    
+            accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
+            superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
+            postgresUrl: process.env.POSTGRES_URL,
+        });
     } 
-    return SecretsSchema.parse(secrets) as any;
+    return SecretsSchema.parse(secrets);
 }
