@@ -7,28 +7,28 @@ export const authMiddleware = (
     req: express.Request,
     res: express.Response,
     next: express.NextFunction,
-) => {
-    const authorization = req.header('Authorization');
-    // temporarily disable auth
-    const byPassAuth = req.url.startsWith('/recordxx/');
+): void => {
+    const authorizationHeader = req.header('Authorization');
 
-    if (authorization === `Bearer ${MOCK_TOKEN}` || byPassAuth) {
+    if (authorizationHeader === `Bearer ${MOCK_TOKEN}`) {
         const appId = Number.parseInt(req.header(APP_ID_HEADER));
         const groupId = req.header(GROUP_ID_HEADER);
         Object.assign(req, { ctx: { userId: 1, appId, groupId } });
         next();
         return;
-    } 
+    }
 
-    if (authorization && authorization.startsWith('Bearer ')) {
-        const jwtPayload = verifyJwt(authorization);
-        const groupId = Number.parseInt(req.header(GROUP_ID_HEADER));
-        const ctx: Ctx = { userId: jwtPayload.userId, appId: jwtPayload.appId, groupId };
+    if (authorizationHeader && authorizationHeader.startsWith('Bearer ')) {
+        const payload = verifyJwt(authorizationHeader);
+        if (!payload) {
+            res.status(401).send('Invalid Authorization header');
+            return;
+        }
+        const ctx: Ctx = { appId: payload.appId, userId: payload.userId };
         Object.assign(req, { ctx });
         next();
         return;
     }
 
-    console.log('No auth');
-    res.status(401).send();    
+    res.status(401).send('Failed authentication');
 };

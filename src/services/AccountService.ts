@@ -9,7 +9,7 @@ import { ServerError } from '../util/errors';
 import * as jwt from 'jsonwebtoken';
 import { ACCESS_TOKEN_EXPIRES_IN } from '../contants';
 import { getSecrets } from './ConfigService';
- 
+
 export const MOCK_TOKEN = 'mock_token';
 
 // Deprecated, used by pencil service
@@ -20,10 +20,10 @@ export const login = (username: string, password: string) => {
 };
 
 interface JwtPayload {
-    userId: number; 
+    userId: number;
     appId: number;
 }
- function createJwt(user: User): string {
+function createJwt(user: User): string {
     const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId };
     return jwt.sign(jwtPayload, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
 }
@@ -32,10 +32,15 @@ export function verifyJwt(authorizationHeader?: string): JwtPayload | undefined 
     if (authorizationHeader === undefined || !authorizationHeader.startsWith('Bearer ')) {
         return undefined;
     }
-    const token = authorizationHeader.substring(7);
-    const verifyResult = jwt.verify(token, getSecrets().accessTokenSecret);
-    const jwtPayload = _.pick(verifyResult, ['userId', 'appId']);
-    return jwtPayload as JwtPayload;
+    try {
+        const token = authorizationHeader.substring(7);
+        const verifyResult = jwt.verify(token, getSecrets().accessTokenSecret);
+        return _.pick(verifyResult, ['userId', 'appId']) as JwtPayload;
+    } catch (err) {
+        logger.error('Failed to verify jwt', { err });
+        return undefined;
+    }
+
 }
 
 export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
@@ -94,4 +99,3 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     return { appId: user.appId, userId: user.id, token };
 };
 
- 

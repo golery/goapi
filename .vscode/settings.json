@@ -29,5 +29,6 @@
   ],
   "appService.deploySubpath": "",
   "javascript.preferences.importModuleSpecifier": "relative",
-  "typescript.preferences.importModuleSpecifier": "relative"
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "files.autoSave": "afterDelay"
 }

@@ -1,12 +1,10 @@
-import { SignInRequest } from '../../src/types/schemas';
-import { app } from '../../src/app';
-import request from 'supertest';
-import { describe } from 'mocha';
-import { closeDb, initMikroOrm } from '../../src/services/Init';
-import { loadConfig } from '../../src/services/ConfigService';
-import { APP_ID_HEADER } from '../../src/contants';
-import * as uuid from 'uuid';
 import { assert } from 'chai';
+import { describe } from 'mocha';
+import request from 'supertest';
+import * as uuid from 'uuid';
+import { app } from '../../src/app';
+import { loadConfig } from '../../src/services/ConfigService';
+import { closeDb, initMikroOrm } from '../../src/services/Init';
 
 describe('router/public', function () {
     before(async () => {
