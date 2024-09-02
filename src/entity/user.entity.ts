@@ -1,7 +1,8 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import * as uuid from 'uuid';
 
-@Entity({ tableName: 'user' })
+// Table name must be in plural because user is a keyword in postgres
+@Entity({ tableName: 'users' })
 export class User {
     @PrimaryKey({ autoincrement: true })
     id!: number;

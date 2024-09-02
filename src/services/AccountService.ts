@@ -23,12 +23,12 @@ interface JwtPayload {
     userId: number;
     appId: number;
 }
-export function createJwt(user: User): string {
+export function createAccessToken(user: User): string {
     const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId };
     return jwt.sign(jwtPayload, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
 }
 
-export function verifyJwt(authorizationHeader?: string): JwtPayload | undefined {
+export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: string): JwtPayload | undefined {
     if (authorizationHeader === undefined || !authorizationHeader.startsWith('Bearer ')) {
         return undefined;
     }
@@ -69,7 +69,7 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
     user.password = password;
     user.passwordHash = await bcrypt.hash(password, 10);
     await em.persistAndFlush(user);
-    const token = createJwt(user);
+    const token = createAccessToken(user);
     logger.info(`Created user ${user.id}`);
     return { appId: user.appId, userId: user.id, token };
 };
@@ -94,7 +94,7 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
         throw new ServerError(401, 'Invalid password');
     }
     logger.info(`Login with user ${user.id}`);
-    const token = createJwt(user);
+    const token = createAccessToken(user);
 
     return { appId: user.appId, userId: user.id, token };
 };

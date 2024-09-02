@@ -1,5 +1,5 @@
 import express from 'express';
-import { MOCK_TOKEN, verifyJwt } from '../services/AccountService';
+import { MOCK_TOKEN, verifyAccessTokenInAuthorizationHeader } from '../services/AccountService';
 import { APP_ID_HEADER, GROUP_ID_HEADER } from '../contants';
 import { Ctx } from '../types/context';
 import { parseIntOpt } from '../utils/parser';
@@ -21,7 +21,7 @@ export const authMiddleware = (
     } 
 
     if (authorizationHeader && authorizationHeader.startsWith('Bearer ')) {
-        const payload = verifyJwt(authorizationHeader);    
+        const payload = verifyAccessTokenInAuthorizationHeader(authorizationHeader);    
         if (!payload) {
             res.status(401).send('Invalid Authorization header');
             return;
