@@ -45,5 +45,12 @@ describe('router/public', function () {
             assert.equal(pingResponse.appId, appId);
             assert.isTrue(pingResponse.userId > 0);
         });
+
+        it('#it.invalid JWT', async () => {
+            const { body: pingResponse } = await request(app)
+                .get('/api/ping')       
+                .set('Authorization', 'Bearer InvalidJWT')         
+                .expect(401);
+        });
     });
 }); 
