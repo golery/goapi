@@ -13,20 +13,20 @@ import { getPublicRouter } from './public';
 export const getApiRouter = (): Router => {
     const router = express.Router();
 
-    router.post(
-        '/login',
-        apiHandler(async (req, res) => {
-            const { username, password } = req.body;
-            console.log(`Login for ${username}`);
-            const result = login(username, password);
-            if (result) {
-                res.json(result);
-            } else {
-                console.log('Login failed');
-                res.status(401).send();
-            }
-        }),
-    );
+    // router.post(
+    //     '/login',
+    //     apiHandler(async (req, res) => {
+    //         const { username, password } = req.body;
+    //         console.log(`Login for ${username}`);
+    //         const result = login(username, password);
+    //         if (result) {
+    //             res.json(result);
+    //         } else {
+    //             console.log('Login failed');
+    //             res.status(401).send();
+    //         }
+    //     }),
+    // );
 
     router.get(
         '/file/:id',

@@ -1,1 +1,1 @@
-docker build -t golery/goapi .
+docker build -t golery/goapi:sandbox .

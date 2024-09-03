@@ -126,7 +126,8 @@ export const getAuthenticatedRouter = (): Router => {
     // ping and return current authenticated user
     router.get(
         '/ping',
-        apiHandler(async (req) => {            
+        apiHandler(async (req) => {        
+            logger.info('Pinged', req.ctx);    
             return req.ctx;        
         }),
     );
