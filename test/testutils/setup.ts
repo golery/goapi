@@ -1,5 +1,5 @@
 import { User } from '../../src/entity/user.entity';
-import { createJwt } from '../../src/services/AccountService';
+import { createAccessToken } from '../../src/services/AccountService';
 import { orm } from '../../src/services/db';
 import * as uuid from 'uuid';
 
@@ -14,5 +14,5 @@ export async function createUser(): Promise<{ accessToken: string; user: User; }
         appId: testAppId
     });
     await em.persistAndFlush(user);
-    return { user, accessToken: createJwt(user) };
+    return { user, accessToken: createAccessToken(user) };
 }

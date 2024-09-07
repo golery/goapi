@@ -23,10 +23,10 @@ describe('validators', function () {
         // fails for > 20 chars
         assert.equal(validatePassword('Aa#12345678901234567890'), 'Password must be at most 20 characters');    
         // fails for no upper case
-        assert.equal(validatePassword('aa#12345'), 'Password must contain at least one uppercase letter');
+        assert.equal(validatePassword('aa#12345', true), 'Password must contain at least one uppercase letter');
         // fails for no lower case
-        assert.equal(validatePassword('AA#12345'), 'Password must contain at least one lowercase letter');
+        assert.equal(validatePassword('AA#12345', true), 'Password must contain at least one lowercase letter');
         // fails for no special characters
-        assert.equal(validatePassword('Aab12345'), 'Password must contain at least one special character');
+        assert.equal(validatePassword('Aab12345', true), 'Password must contain at least one special character');
     });
 });
