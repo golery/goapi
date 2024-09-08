@@ -1,6 +1,6 @@
 import { Group } from './../entity/Group.entity';
 import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
-import { GetUserResponse, SignInResponse } from './../types/schemas';
+import { CreateGroupResponse, GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
 import * as bcrypt from 'bcrypt';
@@ -16,7 +16,7 @@ import { UserGroup } from '../entity/UserGroup.entity';
 import { findGroupIdsByUserId } from '../repositories/group';
 import { Ctx } from '../types/context';
 import { Group } from '../entity/Group.entity';
- 
+
 export const MOCK_TOKEN = 'mock_token';
 
 // Deprecated, used by pencil service
@@ -55,7 +55,7 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 export const signInGoogle = async (appId: number, accessToken: string): Promise<SignInResponse> => {
     const tokenInfo = await getTokenInfo(accessToken);
-    const { aud, email, email_verified: emailVerified, expires_in: expiresIn} = tokenInfo;
+    const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
     if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
         logger.error('Token was generated for invalid clientId', { tokenInfo, appId });
         throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
@@ -66,8 +66,8 @@ export const signInGoogle = async (appId: number, accessToken: string): Promise<
     if (expiresIn < 1) {
         throw new ServerError(400, 'Fail to sign in via Google: Token expired');
     }
-    logger.info('Retrieved token info from Google', tokenInfo );
-    const em = getEm(); 
+    logger.info('Retrieved token info from Google', tokenInfo);
+    const em = getEm();
     let user = await em.findOne(User, { email, appId });
     if (!user) {
         user = new User();
@@ -107,15 +107,15 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
     let user = await em.findOne(User, { email, appId });
     if (!!user && user.passwordHash !== undefined) {
         throw new ServerError(400, 'User already exists');
-    } 
-    if (!user) { 
+    }
+    if (!user) {
         user = new User();
         user.appId = appId;
         user.email = email
-    }       
+    }
     user.password = password;
     user.passwordHash = await bcrypt.hash(password, 10);
-    
+
     await em.persistAndFlush(user);
     const token = createAccessToken(user);
     logger.info(`Created user ${user.id}`);
@@ -156,20 +156,20 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
 };
 
 
-export async function createGroup(ctx:Ctx, appId: number) {
+export async function createGroup(ctx: Ctx, appId: number): Promise<CreateGroupResponse> {
     const em = getEm();
     const group = new Group();
     Object.assign(group, { appId, userId: ctx.userId });
-    await em.persistAndFlush(group);    
-    
+    await em.persistAndFlush(group);
+
     const userGroup = new UserGroup();
     Object.assign(userGroup, { userId: ctx.userId, groupId: group.id });
     await em.persistAndFlush(userGroup);
 
-    return group;
+    return { id: group.id, appId: group.appId };
 }
 
-export async function getUserInfo(ctx:Ctx): Promise<GetUserResponse> {
+export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
     const em = getEm();
     const user = await em.findOneOrFail(User, { id: ctx.userId });
     const groups = await em.find(UserGroup, { userId: ctx.userId });

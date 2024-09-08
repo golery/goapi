@@ -42,3 +42,8 @@ export interface GetUserResponse {
     appId: number,
     groupIds: number[],
 }
+
+export interface CreateGroupResponse {
+    appId: number,
+    id: number,
+}
