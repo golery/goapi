@@ -1,3 +1,4 @@
+import { Group } from './../entity/Group.entity';
 import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
 import { SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
@@ -13,6 +14,8 @@ import axios from 'axios';
 import { getTokenInfo } from '../external/google';
 import { UserGroup } from '../entity/UserGroup.entity';
 import { findGroupIdsByUserId } from '../repositories/group';
+import { Ctx } from '../types/context';
+import { Group } from '../entity/Group.entity';
  
 export const MOCK_TOKEN = 'mock_token';
 
@@ -152,3 +155,28 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
 };
 
+
+export async function createGroup(ctx:Ctx, appId: number) {
+    const em = getEm();
+    const group = new Group();
+    Object.assign(group, { appId, userId: ctx.userId });
+    await em.persistAndFlush(group);    
+    
+    const userGroup = new UserGroup();
+    Object.assign(userGroup, { userId: ctx.userId, groupId: group.id });
+    await em.persistAndFlush(userGroup);
+
+    return group;
+}
+
+export async function getUserInfo(ctx:Ctx) {
+    const em = getEm();
+    const user = await em.findOneOrFail(User, { id: ctx.userId });
+    const groups = await em.find(UserGroup, { userId: ctx.userId });
+
+    return {
+        email: user.email,
+        appId: user.appId,
+        groupId: groups.map((ug) => ug.groupId),
+    };
+}

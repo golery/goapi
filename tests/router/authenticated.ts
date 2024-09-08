@@ -3,7 +3,7 @@ import request from 'supertest';
 import { describe } from 'mocha';
 import { closeDb, initMikroOrm } from '../../src/services/db';
 import { loadConfig } from '../../src/services/ConfigService';
-import { APP_ID_HEADER, GROUP_ID_HEADER } from '../../src/contants';
+import { APP_ID_HEADER, AppIds, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
 import { createUser as setupUser } from '../testutils/setup';
@@ -36,15 +36,21 @@ describe('router/authenticated', function () {
     });
 
     describe('group', function () {
-        it('#ping', async () => {
+        it('#it.create group then get user info', async () => {
             const { accessToken } = await setupUser();
-            const response: any = await request(app)
-                .get('/api/ping')
-                .set('Authorization', `Bearer ${accessToken}`)
-                .set(GROUP_ID_HEADER, `${getRandomInt()}`)   
-                .expect(200);
-            assert.equal(response.appId, APP_ID_HEADER);
-            assert.isNumber(response.userId);
+            const { body: group } = await request(app)
+                .post('/api/group')
+                .set('Authorization', `Bearer ${accessToken}`)     
+                .send({ appId: AppIds.TEST })   
+                .expect(200);            
+            assert.equal(group.appId, AppIds.TEST );
+
+            const { body: userInfo } = await request(app)
+            .get('/api/user')
+            .set('Authorization', `Bearer ${accessToken}`)                 
+            .expect(200);       
+
+            assert.deepEqual(userInfo.groupId, [group.id]);        
         });
     });
 });

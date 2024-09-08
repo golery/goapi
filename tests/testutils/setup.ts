@@ -1,4 +1,4 @@
-import { User } from '../../src/entity/user.entity';
+import { User } from '../../src/entity/User.entity';
 import { createAccessToken } from '../../src/services/AccountService';
 import { orm } from '../../src/services/db';
 import * as uuid from 'uuid';
@@ -8,7 +8,7 @@ export async function createUser(): Promise<{ accessToken: string; user: User; }
     const em = orm.em.fork();
     const user = new User();
     Object.assign(user, {
-        email: `test+${uuid.v4()}}@test.com`,
+        email: `test+${uuid.v4()}@test.com`,
         password: `pass-${uuid.v4()}}`,
         passwordHash: `pass-${uuid.v4()}}`,
         appId: testAppId

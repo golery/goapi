@@ -5,8 +5,8 @@ import * as uuid from 'uuid';
 @Entity({ tableName: 'user_group' })
 export class UserGroup {
     @PrimaryKey()
-    user_id!: number;
+    userId!: number;
 
     @PrimaryKey()
-    group_id!: number;
+    groupId!: number;
 }
