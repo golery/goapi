@@ -22,16 +22,14 @@ describe('router/authenticated', function () {
     });
     describe('record', function () {
         it('#sync', async () => {
-            const { accessToken } = await createUserOld();
+            const testUser = await setupUser();
             const random = uuid.v4();
-            const response: any = await request(app)
-                .put('/api/record/sync')
-                .set('Authorization', `Bearer ${accessToken}`)
+            const response: any = await sendRequest(testUser, request(app)
+                .put('/api/record/sync')                
                 .set(GROUP_ID_HEADER, `${getRandomInt()}`)
-                .send({ records: { test: [{ random }] } })
-                .expect(200);
-            console.log(response.body.records.test);
-            const saved = response.body.records.test.find(o => o.random === random);
+                .send({ records: { test: [{ random }] } }));
+            console.log(response.records.test);
+            const saved = response.records.test.find(o => o.random === random);
             assert.deepEqual(_.pick(saved, ['random']), { random });
         });
     });
