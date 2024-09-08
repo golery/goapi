@@ -6,7 +6,7 @@ import { loadConfig } from '../../src/services/ConfigService';
 import { APP_ID_HEADER, AppIds, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
-import { sendRequest, createUserOld, setupUser } from '../testutils/setup';
+import { sendRequest, setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
 import { CreateGroupResponse, GetUserResponse } from '../../src/types/schemas';
