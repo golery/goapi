@@ -11,21 +11,6 @@ export interface TestUser {
     userId: number,
 }
 
-// export const testAppId = AppIds.TEST;
-// // Replaced by setupUser
-// export async function createUserOld(): Promise<{ accessToken: string; user: User; }> {
-//     const em = orm.em.fork();
-//     const user = new User();
-//     Object.assign(user, {
-//         email: `test+${uuid.v4()}@test.com`,
-//         password: `pass-${uuid.v4()}}`,
-//         passwordHash: `pass-${uuid.v4()}}`,
-//         appId: testAppId
-//     });
-//     await em.persistAndFlush(user);
-//     return { user, accessToken: createAccessToken(user) };
-// }
-
 export async function setupUser(): Promise<TestUser> {
     const em = orm.em.fork();
     const user = new User();
