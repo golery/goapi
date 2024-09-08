@@ -8,8 +8,8 @@ export function validatePassword(password: string, strict?: boolean): string | u
     if (password.length < 8) {
         return 'Password must be at least 8 characters';
     }
-    if (password.length > 20) {
-        return 'Password must be at most 20 characters';
+    if (password.length > 36) { // 36 is the length of uuid for testing
+        return 'Password must be at most 36 characters';
     }
     if (strict) {
         const upperCaseLetterRegex = new RegExp('[A-Z]');

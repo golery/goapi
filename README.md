@@ -55,7 +55,7 @@ npm run test:grep isValidEmail
 1. appId: number (int2 = smallint)
 
 
-# RELEASE
-1. ./script/release.sh
-2. Build docker image golery/api, publish it to docker
-3. Call koeyb to restart
+# RELEASE TO SANDBOX
+1. ./scripts/deploy-sandbox to build and deploy a sandbox version to koyb
+2. ./scripts/release: create tag for release 
+   manually pull and run the docker image on gcp

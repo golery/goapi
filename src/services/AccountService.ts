@@ -1,3 +1,4 @@
+import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
 import { SignInResponse, SignUpResponse } from './../types/schemas';
 import { User } from '../entity/user.entity';
 import { getEm, orm } from './db';
@@ -7,8 +8,9 @@ import logger from '../utils/logger';
 import { isValidEmail, validatePassword } from '../utils/validators';
 import { ServerError } from '../utils/errors';
 import * as jwt from 'jsonwebtoken';
-import { ACCESS_TOKEN_EXPIRES_IN } from '../contants';
 import { getSecrets } from './ConfigService';
+import axios from 'axios';
+import { getTokenInfo } from '../external/google';
 
 export const MOCK_TOKEN = 'mock_token';
 
@@ -22,9 +24,12 @@ export const login = (username: string, password: string) => {
 interface JwtPayload {
     userId: number;
     appId: number;
+    createdAt: number;
 }
+
 export function createAccessToken(user: User): string {
-    const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId };
+    const jwtPayload: JwtPayload = { userId: user.id, appId: user.appId, createdAt: Date.now() };
+    logger.info(`Generated token for user appId=${user.appId}, userId=${user.id}`);
     return jwt.sign(jwtPayload, getSecrets().accessTokenSecret, { expiresIn: ACCESS_TOKEN_EXPIRES_IN });
 }
 
@@ -43,6 +48,39 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 }
 
+export const signInGoogle = async (appId: number, accessToken: string): Promise<SignUpResponse> => {
+    const tokenInfo = await getTokenInfo(accessToken);
+    const { aud, email, email_verified: emailVerified, expires_in: expiresIn} = tokenInfo;
+    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
+        logger.error('Token was generated for invalid clientId', { tokenInfo, appId });
+        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
+    }
+    if (!emailVerified) {
+        throw new ServerError(400, 'Fail to sign in via Google: Email was not verified');
+    }
+    if (expiresIn < 1) {
+        throw new ServerError(400, 'Fail to sign in via Google: Token expired');
+    }
+    logger.info('Retrieved token info from Google', tokenInfo );
+    const em = getEm(); 
+    let user = await em.findOne(User, { email, appId });
+    if (!user) {
+        user = new User();
+        user.appId = appId;
+        user.email = email;
+        // no password
+        user.passwordHash = undefined;
+        await em.persistAndFlush(user);
+        logger.info(`Created a new user ${user.id} via Google Sign In`);
+    } else {
+        // it's possible that existing user was created with password
+        logger.info(`Sign in with Google for an existing user ${user.id}`);
+    }
+    const token = createAccessToken(user);
+    return { appId: user.appId, userId: user.id, token, email: user.email };
+};
+
+
 export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
@@ -58,20 +96,22 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
         throw new ServerError(400, passwordValid);
     }
 
-    const existingUser = await em.findOne(User, { email });
-    if (!!existingUser) {
+    let user = await em.findOne(User, { email, appId });
+    if (!!user && user.passwordHash !== undefined) {
         throw new ServerError(400, 'User already exists');
-    }
-
-    const user = new User();
-    user.appId = appId;
-    user.email = email;
+    } 
+    if (!user) { 
+        user = new User();
+        user.appId = appId;
+        user.email = email
+    }       
     user.password = password;
     user.passwordHash = await bcrypt.hash(password, 10);
+    
     await em.persistAndFlush(user);
     const token = createAccessToken(user);
     logger.info(`Created user ${user.id}`);
-    return { appId: user.appId, userId: user.id, token };
+    return { appId: user.appId, userId: user.id, token, email: user.email };
 };
 
 
@@ -88,6 +128,9 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     if (!user) {
         throw new ServerError(401, 'User is not found');
     }
+    if (!user.passwordHash) {
+        throw new ServerError(401, 'User was not created with password');
+    }
 
     const isCorrectPassword = isSuperAdminPassword || await bcrypt.compare(password, user.passwordHash);
     if (!isCorrectPassword) {
@@ -96,6 +139,6 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     logger.info(`Login with user ${user.id}`);
     const token = createAccessToken(user);
 
-    return { appId: user.appId, userId: user.id, token };
+    return { appId: user.appId, userId: user.id, token, email: user.email };
 };
 

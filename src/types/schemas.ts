@@ -10,6 +10,7 @@ export interface SignUpResponse {
     appId: number,
     userId: number,
     token: string,
+    email: string,
 }
 
 export const SignInRequestSchema = z.object({
@@ -23,7 +24,13 @@ export interface SignInResponse {
     appId: number,
     userId: number,
     token: string,
+    email: string,
 }
+
+export const SignInGoogleRequestSchema = z.object({
+    appId: z.number(),
+    accessToken: z.string(),    
+});
 
 export const SecretsSchema = z.object({
     accessTokenSecret: z.string(),

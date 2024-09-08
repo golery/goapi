@@ -1,1 +1,4 @@
-./scripts/build-image.sh && ./scripts/push-image.sh && koyeb services redeploy goapi-sandbox/main
+# TODO: use verision number so that rollback is easier
+TAG=latest
+docker tag golery/goapi:sandbox golery/goapi:$TAG
+docker push golery/goapi:$TAG

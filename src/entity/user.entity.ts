@@ -13,11 +13,11 @@ export class User {
     @Property()
     email!: string;
 
-    @Property()
-    password!: string;
+    @Property({ nullable: true })
+    password?: string;
 
-    @Property()
-    passwordHash!: string;
+    @Property({ nullable: true })
+    passwordHash?: string;
 
     @Property()
     createdAt = new Date();
