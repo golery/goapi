@@ -6,13 +6,6 @@ export const SignUpRequestSchema = z.object({
     password: z.string(),
 });
 
-export interface SignUpResponse {
-    appId: number,
-    userId: number,
-    token: string,
-    email: string,
-}
-
 export const SignInRequestSchema = z.object({
     appId: z.number(),
     email: z.string(),
@@ -25,6 +18,7 @@ export interface SignInResponse {
     userId: number,
     token: string,
     email: string,
+    groupIds: number[],
 }
 
 export const SignInGoogleRequestSchema = z.object({
@@ -36,4 +30,8 @@ export const SecretsSchema = z.object({
     accessTokenSecret: z.string(),
     superAdminPassword: z.string(),
     postgresUrl: z.string(),
+});
+
+export const CreateGroupRequestSchema = z.object({
+    appId: z.number(),
 });

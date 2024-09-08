@@ -1,10 +1,10 @@
 /** This service supports synchronizing list of data record. Data is just string without schema */
 
 import { Ctx } from './../types/context.d';
-import { DataRecord } from '../entity/record.entity';
+import { DataRecord } from '../entity/Record.entity';
 import { getEm, orm } from './db';
 import * as _ from 'lodash';
-
+ 
 async function deleteRecords(ctx: Ctx) {
     const em = getEm();
     const groupId = ctx.groupId;

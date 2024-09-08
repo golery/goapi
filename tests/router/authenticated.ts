@@ -1,4 +1,4 @@
-import { app } from './../../src/app';
+import { app } from '../../src/app';
 import request from 'supertest';
 import { describe } from 'mocha';
 import { closeDb, initMikroOrm } from '../../src/services/db';
@@ -32,6 +32,19 @@ describe('router/authenticated', function () {
                 console.log(response.body.records.test);
             const saved = response.body.records.test.find(o => o.random === random);
             assert.deepEqual(_.pick(saved, ['random']), { random});
+        });
+    });
+
+    describe('group', function () {
+        it('#ping', async () => {
+            const { accessToken } = await setupUser();
+            const response: any = await request(app)
+                .get('/api/ping')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .set(GROUP_ID_HEADER, `${getRandomInt()}`)   
+                .expect(200);
+            assert.equal(response.appId, APP_ID_HEADER);
+            assert.isNumber(response.userId);
         });
     });
 });

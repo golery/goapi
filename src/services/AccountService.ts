@@ -1,6 +1,6 @@
 import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
-import { SignInResponse, SignUpResponse } from './../types/schemas';
-import { User } from '../entity/user.entity';
+import { SignInResponse } from './../types/schemas';
+import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
 import * as bcrypt from 'bcrypt';
 import * as _ from 'lodash';
@@ -11,7 +11,9 @@ import * as jwt from 'jsonwebtoken';
 import { getSecrets } from './ConfigService';
 import axios from 'axios';
 import { getTokenInfo } from '../external/google';
-
+import { UserGroup } from '../entity/UserGroup.entity';
+import { findGroupIdsByUserId } from '../repositories/group';
+ 
 export const MOCK_TOKEN = 'mock_token';
 
 // Deprecated, used by pencil service
@@ -48,7 +50,7 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 }
 
-export const signInGoogle = async (appId: number, accessToken: string): Promise<SignUpResponse> => {
+export const signInGoogle = async (appId: number, accessToken: string): Promise<SignInResponse> => {
     const tokenInfo = await getTokenInfo(accessToken);
     const { aud, email, email_verified: emailVerified, expires_in: expiresIn} = tokenInfo;
     if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
@@ -77,11 +79,14 @@ export const signInGoogle = async (appId: number, accessToken: string): Promise<
         logger.info(`Sign in with Google for an existing user ${user.id}`);
     }
     const token = createAccessToken(user);
-    return { appId: user.appId, userId: user.id, token, email: user.email };
+
+    const groupIds = await findGroupIdsByUserId(user.id);
+
+    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
 };
 
 
-export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignUpResponse> => {
+export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
@@ -111,7 +116,10 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
     await em.persistAndFlush(user);
     const token = createAccessToken(user);
     logger.info(`Created user ${user.id}`);
-    return { appId: user.appId, userId: user.id, token, email: user.email };
+
+    const groupIds = await findGroupIdsByUserId(user.id);
+
+    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
 };
 
 
@@ -139,6 +147,8 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     logger.info(`Login with user ${user.id}`);
     const token = createAccessToken(user);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email };
+    const groupIds = await findGroupIdsByUserId(user.id);
+
+    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
 };
 

@@ -6,6 +6,8 @@ import { Node } from '../entity/Node';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { syncRecords } from '../services/RecordService';
 import logger from '../utils/logger';
+import { createGroup } from '../services/GroupService';
+import { CreateGroupRequestSchema } from '../types/schemas';
 
 const upload = multer({
     limits: {
@@ -131,5 +133,11 @@ export const getAuthenticatedRouter = (): Router => {
             return req.ctx;        
         }),
     );
+
+    router.post('/group', apiHandler(async (req, res) => {
+        const { appId } = CreateGroupRequestSchema.parse(req)
+        return await createGroup(req.ctx, appId);
+    }));
+    
     return router;
 };
