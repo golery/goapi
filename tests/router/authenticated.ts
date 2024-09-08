@@ -48,7 +48,6 @@ describe('router/authenticated', function () {
 
             const userInfo: GetUserResponse = await sendRequest(accessToken, request(app)
             .get('/api/user'));
-            console.log('==>', userInfo);
             assert.deepEqual(userInfo.groupIds, [group.id]);        
         });
     });
