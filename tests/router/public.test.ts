@@ -14,8 +14,7 @@ describe('router/public', function () {
         await loadConfig();
         await initMikroOrm();
     });
-    after(async () => {
-        console.log('DONE');
+    after(async () => {    
         await closeDb();
     });
     this.afterEach(() => {
