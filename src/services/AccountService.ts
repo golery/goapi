@@ -1,6 +1,6 @@
 import { Group } from './../entity/Group.entity';
 import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
-import { SignInResponse } from './../types/schemas';
+import { GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
 import * as bcrypt from 'bcrypt';
@@ -169,7 +169,7 @@ export async function createGroup(ctx:Ctx, appId: number) {
     return group;
 }
 
-export async function getUserInfo(ctx:Ctx) {
+export async function getUserInfo(ctx:Ctx): Promise<GetUserResponse> {
     const em = getEm();
     const user = await em.findOneOrFail(User, { id: ctx.userId });
     const groups = await em.find(UserGroup, { userId: ctx.userId });
@@ -177,6 +177,6 @@ export async function getUserInfo(ctx:Ctx) {
     return {
         email: user.email,
         appId: user.appId,
-        groupId: groups.map((ug) => ug.groupId),
+        groupIds: groups.map((ug) => ug.groupId),
     };
 }

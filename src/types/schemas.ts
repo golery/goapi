@@ -35,3 +35,10 @@ export const SecretsSchema = z.object({
 export const CreateGroupRequestSchema = z.object({
     appId: z.number(),
 });
+
+
+export interface GetUserResponse {
+    email: string,
+    appId: number,
+    groupIds: number[],
+}

@@ -6,9 +6,10 @@ import { loadConfig } from '../../src/services/ConfigService';
 import { APP_ID_HEADER, AppIds, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
-import { createUser as setupUser } from '../testutils/setup';
+import { sendRequest, createUser as setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
+import { GetUserResponse } from '../../src/types/schemas';
 
 describe('router/authenticated', function () {
     before(async () => {
@@ -39,18 +40,16 @@ describe('router/authenticated', function () {
         it('#it.create group then get user info', async () => {
             const { accessToken } = await setupUser();
             const { body: group } = await request(app)
-                .post('/api/group')
-                .set('Authorization', `Bearer ${accessToken}`)     
+                .post('/api/group')                
                 .send({ appId: AppIds.TEST })   
+                .set('Authorization', `Bearer ${accessToken}`)     
                 .expect(200);            
             assert.equal(group.appId, AppIds.TEST );
 
-            const { body: userInfo } = await request(app)
-            .get('/api/user')
-            .set('Authorization', `Bearer ${accessToken}`)                 
-            .expect(200);       
-
-            assert.deepEqual(userInfo.groupId, [group.id]);        
+            const userInfo: GetUserResponse = await sendRequest(accessToken, request(app)
+            .get('/api/user'));
+            console.log('==>', userInfo);
+            assert.deepEqual(userInfo.groupIds, [group.id]);        
         });
     });
 });
