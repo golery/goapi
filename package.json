@@ -12,7 +12,7 @@
         "dev": "ts-node-dev --exit-child src/server.ts",
         "dev-proddb": "NODE_ENV=production ts-node-dev --exit-child src/server.ts",
         "build": "tsc",
-        "dev-js": "tsc && node dist/server.js",
+        "build:watch": "tsc --watch",
         "test": "ts-mocha tests/**/*.ts",
         "test:grep": "mocha --require ts-node/register/transpile-only --inspect=5000 tests/**/*.ts --grep",
         "test:debug": "mocha --require ts-node/register/transpile-only --inspect-brk=5000 tests/**/*.ts --grep",

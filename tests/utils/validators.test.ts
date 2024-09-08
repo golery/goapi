@@ -20,8 +20,8 @@ describe('validators', function () {
 
         // fails for 7 chars
         assert.equal(validatePassword('Aa#1234'), 'Password must be at least 8 characters');
-        // fails for > 20 chars
-        assert.equal(validatePassword('Aa#12345678901234567890'), 'Password must be at most 20 characters');    
+        // fails for > 36 chars
+        assert.equal(validatePassword('Aa#1234567890123456789012345678901234567890'), 'Password must be at most 36 characters');    
         // fails for no upper case
         assert.equal(validatePassword('aa#12345', true), 'Password must contain at least one uppercase letter');
         // fails for no lower case

@@ -15,7 +15,6 @@ import { getTokenInfo } from '../external/google';
 import { UserGroup } from '../entity/UserGroup.entity';
 import { findGroupIdsByUserId } from '../repositories/group';
 import { Ctx } from '../types/context';
-import { Group } from '../entity/Group.entity';
 
 export const MOCK_TOKEN = 'mock_token';
 

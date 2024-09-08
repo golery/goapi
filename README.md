@@ -24,6 +24,11 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 Access: http://localhost:8200
 In Virtual Machine, Add portforwarding so that Windows hostmachine can access with http://localhost:8200
 
+- npm run build:watch - quickly check syntax
+- npm run test
+- npm run test:grep isValidEmail
+
+
 ## Run with typescript ts-node, using dev db
 npm run dev
 ## Compile and run with js
@@ -31,9 +36,6 @@ npm run dev-js
 ## Run at local connect to prod
 ./scripts/run-image
 It can be used for testing image or just to quickly run backend at local
-## Run test
-npm run test
-npm run test:grep isValidEmail
 
 # TSCONFIG
 
