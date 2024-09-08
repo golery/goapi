@@ -11,21 +11,20 @@ import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
 import { CreateGroupResponse, GetUserResponse } from '../../src/types/schemas';
 
-describe('router/authenticated', function () {
+describe('router/authenticated', () => {
     before(async () => {
         await loadConfig();
         await initMikroOrm();
     });
     after(async () => {
-        console.log('DONE');
         await closeDb();
     });
-    describe('record', function () {
+    describe('record', () => {
         it('#sync', async () => {
             const testUser = await setupUser();
             const random = uuid.v4();
             const response: any = await sendRequest(testUser, request(app)
-                .put('/api/record/sync')                
+                .put('/api/record/sync')
                 .set(GROUP_ID_HEADER, `${getRandomInt()}`)
                 .send({ records: { test: [{ random }] } }));
             console.log(response.records.test);
@@ -34,7 +33,7 @@ describe('router/authenticated', function () {
         });
     });
 
-    describe('group', function () {
+    describe('group', () => {
         it('#it.create group then get user info', async () => {
             const testUser = await setupUser();
             const group: CreateGroupResponse = await sendRequest(testUser, request(app)
