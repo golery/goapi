@@ -156,10 +156,10 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
 };
 
 
-export async function createGroup(ctx: Ctx, appId: number): Promise<CreateGroupResponse> {
+export async function createGroup(ctx: Ctx): Promise<CreateGroupResponse> {
     const em = getEm();
     const group = new Group();
-    Object.assign(group, { appId, userId: ctx.userId });
+    Object.assign(group, { appId: ctx.appId, userId: ctx.userId });
     await em.persistAndFlush(group);
 
     const userGroup = new UserGroup();

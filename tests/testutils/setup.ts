@@ -41,6 +41,7 @@ export async function setupUser(): Promise<TestUser> {
 
 export async function sendRequest<T>(user: TestUser, request: Test): Promise<T> {
     const result = await request.set('Authorization', `Bearer ${user.token}`)
+    .set('appId', `${user.appId}`)
     .expect(200);
     return result.body;
 }

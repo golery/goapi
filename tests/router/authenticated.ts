@@ -37,8 +37,7 @@ describe('router/authenticated', () => {
         it('#it.create group then get user info', async () => {
             const testUser = await setupUser();
             const group: CreateGroupResponse = await sendRequest(testUser, request(app)
-                .post('/api/group')
-                .send({ appId: AppIds.TEST })
+                .post('/api/group')            
             );
             assert.equal(group.appId, AppIds.TEST);
 

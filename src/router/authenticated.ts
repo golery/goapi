@@ -134,9 +134,8 @@ export const getAuthenticatedRouter = (): Router => {
         }),
     );
 
-    router.post('/group', apiHandler(async (req) => {
-        const { appId } = CreateGroupRequestSchema.parse(req.body)
-        return await createGroup(req.ctx, appId);
+    router.post('/group', apiHandler(async (req) => {    
+        return await createGroup(req.ctx);
     }));
 
     router.get('/user', apiHandler(async (req) => {
