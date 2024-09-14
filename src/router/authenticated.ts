@@ -109,7 +109,7 @@ export const getAuthenticatedRouter = (): Router => {
     router.put(
         '/record/sync',
         apiHandler(async (req) => {
-            logger.info('Syncing records');
+            logger.info(`Syncing records for group ${req.ctx.groupId}`);
             const parsedFromTime = Number.parseInt(
                 (req.query.fromTime as string) ?? '0',
             );

@@ -5,6 +5,7 @@ import { DataRecord } from '../entity/Record.entity';
 import { getEm, orm } from './db';
 import * as _ from 'lodash';
 import logger from '../utils/logger';
+import { ServerError } from '../utils/errors';
 
 async function deleteRecords(ctx: Ctx) {
     const em = getEm();
@@ -19,6 +20,9 @@ async function fetchRecords(
     ctx: Ctx,
     fromTime?: Date,
 ): Promise<Record<string, DataRecord[]>> {
+    if (!ctx.groupId) {
+        throw new ServerError(400, 'Failed to fetch records, there is no groupId');
+    }
     const em = getEm();
     const records = await em
         .find(DataRecord, {
@@ -49,7 +53,9 @@ async function upsertRecords(
     const records = Object.entries(recordMap).flatMap(([type, data]) => {
         return data.map((item) => {
             const record = new DataRecord();
+            logger.info('MAP' + JSON.stringify(item));
             Object.assign(record, {
+                id: item.id,
                 data: item,
                 userId: ctx.userId,
                 appId: ctx.appId,
