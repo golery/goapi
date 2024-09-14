@@ -36,11 +36,13 @@ describe('router/authenticated', () => {
     describe('group', () => {
         it('#it.create group then get user info', async () => {
             const testUser = await setupUser();
+            // Given a user create a group
             const group: CreateGroupResponse = await sendRequest(testUser, request(app)
                 .post('/api/group')            
             );
             assert.equal(group.appId, AppIds.TEST);
 
+            // Then that group is associated with the user 
             const userInfo: GetUserResponse = await sendRequest(testUser, request(app)
                 .get('/api/user'));
             assert.deepEqual(userInfo.groupIds, [group.id]);

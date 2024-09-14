@@ -4,7 +4,8 @@ import { Ctx } from './../types/context.d';
 import { DataRecord } from '../entity/Record.entity';
 import { getEm, orm } from './db';
 import * as _ from 'lodash';
- 
+import logger from '../utils/logger';
+
 async function deleteRecords(ctx: Ctx) {
     const em = getEm();
     const groupId = ctx.groupId;
@@ -14,38 +15,37 @@ async function deleteRecords(ctx: Ctx) {
         await em.nativeDelete(DataRecord, { groupId: ctx.groupId });
     }
 }
-function fetchRecords(
+async function fetchRecords(
     ctx: Ctx,
     fromTime?: Date,
 ): Promise<Record<string, DataRecord[]>> {
     const em = getEm();
-    return em
+    const records = await em
         .find(DataRecord, {
             groupId: ctx.groupId,
             updatedAt: { $gt: fromTime ?? new Date(0) },
         })
-        .then((records) => {
-            const dataMap = _.mapValues(_.groupBy(records, 'type'), (value) => {
-                return _.sortBy(value, ['updatedAt']).map(record => ({
-                  id: record.id,
-                  deleted: false,
-                  updateTime: record.updatedAt.getTime(),
-                  createTime: record.createdAt.getTime(),
-                  ...record.data,
-                } as any));
-            });
-            console.log(
-                `Fetch records fromTime ${fromTime}. Found ${records.length}`,
-            );
-            return dataMap;
-        });
+
+    const dataMap = _.mapValues(_.groupBy(records, 'type'), (value) => {
+        return _.sortBy(value, ['updatedAt']).map(record => ({
+            id: record.id,
+            deleted: false,
+            updateTime: record.updatedAt.getTime(),
+            createTime: record.createdAt.getTime(),
+            ...record.data,
+        } as any));
+    });
+    logger.info(
+        `Fetched records from time ${fromTime}. Found ${records.length}`,
+    );
+    return dataMap;
+
 }
 
 async function upsertRecords(
     ctx: Ctx,
     recordMap: Record<string, DataRecord[]>,
 ) {
-    console.log('Upserting records', recordMap);
     const records = Object.entries(recordMap).flatMap(([type, data]) => {
         return data.map((item) => {
             const record = new DataRecord();
@@ -61,11 +61,12 @@ async function upsertRecords(
     });
 
     if (records.length > 0) {
-      console.log(`Upserting ${records.length} records`, records);
+        const startTime = Date.now();
+        logger.info(`Upserting ${records.length} records`);
 
-      const em = getEm();
-      await em.upsertMany(records);
-      console.log('Upserted records', records);
+        const em = getEm();
+        await em.upsertMany(records);
+        logger.info(`Upserted ${records.length} records in ${Date.now() - startTime}ms`);        
     }
 }
 
@@ -75,12 +76,20 @@ export async function syncRecords(
     upsert: Record<string, DataRecord[]>,
     isDelete: boolean,
 ): Promise<{ records: Record<string, DataRecord[]>; timestamp: number }> {
+    logger.info(`Syncing records...`);
+    const t1 = Date.now();
     if (isDelete) {
         await deleteRecords(ctx);
+        logger.info(`Deleted records in ${Date.now() - t1}ms`);
     }
+    const t2 = Date.now();
     if (upsert !== undefined) {
-      await upsertRecords(ctx, upsert);
+        await upsertRecords(ctx, upsert);
+        logger.info(`Upserted records in ${Date.now() - t2}ms`);
     }
+    const t3 = Date.now();    
     const records = await fetchRecords(ctx, new Date(fromTime));
+    logger.info(`Fetched records in ${Date.now() - t3}ms`);
+    logger.info(`Done.Synced records in ${Date.now() - t1}ms`);
     return { records, timestamp: Date.now() };
 }

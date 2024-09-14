@@ -21,21 +21,20 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 - Prod: they are loaded from docker environment variables/
 
 # DEV
+## Cheatsheet
+- npm run dev
+- npm run test:grep isValidEmail
+- npm run build:watch # quickly check syntax
+- npm run test # run all test
+- ./scripts/deploy-sandbox.sh # deploy to koeyb as sandbox env
+
+
+
+## Expose to Mobile on Windows machine
 Access: http://localhost:8200
 In Virtual Machine, Add portforwarding so that Windows hostmachine can access with http://localhost:8200
 
-- npm run build:watch - quickly check syntax
-- npm run test
-- npm run test:grep isValidEmail
 
-
-## Run with typescript ts-node, using dev db
-npm run dev
-## Compile and run with js
-npm run dev-js
-## Run at local connect to prod
-./scripts/run-image
-It can be used for testing image or just to quickly run backend at local
 
 # TSCONFIG
 

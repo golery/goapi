@@ -8,7 +8,7 @@ import { EntityManager, MikroORM, ReflectMetadataProvider } from '@mikro-orm/cor
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import logger from '../utils/logger';
-import { getSecrets } from './ConfigService';
+import { getSecrets, isDev } from './ConfigService';
 
 export let dataSource: DataSource;
 export let nodeRepo: Repository<Node>;
@@ -30,7 +30,7 @@ export async function initMikroOrm() {
         metadataProvider: ReflectMetadataProvider,
 
         // enable debug mode to log SQL queries and discovery information
-        debug: true,
+        debug: isDev(),
         forceUndefined: true,
 
         
