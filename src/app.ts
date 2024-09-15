@@ -13,8 +13,8 @@ loadConfig();
 app.set('port', process.env.PORT || 8200);
 app.use(cors());
 app.use(compression());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 app.use((req, res, next) => {
     res.locals.user = req.user;
     // fork orm.em for each request
