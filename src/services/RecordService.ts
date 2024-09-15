@@ -68,7 +68,7 @@ async function upsertRecords(
 
     if (records.length > 0) {
         const startTime = Date.now();
-        logger.info(`Upserting ${records.length} records`);
+        logger.info(`Upserting ${records.length} records`, { ctx, records });
 
         const em = getEm();
         await em.upsertMany(records);
@@ -90,6 +90,7 @@ export async function syncRecords(
     }
     const t2 = Date.now();
     if (upsert !== undefined) {
+        logger.debug(`Upserting ${Object.keys(upsert).length} records`, { ctx, upsert });
         await upsertRecords(ctx, upsert);
         logger.info(`Upserted records in ${Date.now() - t2}ms`);
     }
