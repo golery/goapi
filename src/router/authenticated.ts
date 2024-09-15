@@ -8,6 +8,7 @@ import { syncRecords } from '../services/RecordService';
 import logger from '../utils/logger';
 import { CreateGroupRequestSchema } from '../types/schemas';
 import { createGroup, getUserInfo } from '../services/AccountService';
+import { ServerError } from '../utils/errors';
 
 const upload = multer({
     limits: {
@@ -129,7 +130,7 @@ export const getAuthenticatedRouter = (): Router => {
     router.get(
         '/ping',
         apiHandler(async (req) => {        
-            logger.info('Pinged', req.ctx);    
+            logger.info('Pinged', { ctx: req.ctx, url: req.url });            
             return req.ctx;        
         }),
     );

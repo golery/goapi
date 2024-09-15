@@ -12,32 +12,37 @@ export const apiHandler =
             res: express.Response,
             next: express.NextFunction,
         ) => {
+            logger.info(`REQUEST [${req.method} ${req.url}]`);
             execute(req as ApiRequest, res)
-                .then((data) => data && res.send(data))
-                .catch((err) => {                    
+                .then((data) => {
+                    res.send(data);
+                    logger.info(`DONE. REQUEST 200 [${req.method} ${req.url}]`);
+                })
+                .catch((err) => {
                     if (err instanceof ServerError) {
-                        logger.error(`FAILED REQUEST [${req.method} ${req.url}]: ${err.code}-${err.message}`, { err });
-                        res.status(err.code).json({
+                        const errorResponse = {
                             code: err.code,
                             message: err.message,
                             data: err.data,
-                        });
-                    } else if (err.isAxiosError) {                                                
-                        const { response: errResponse } = err;                        
-                        if (errResponse) {                            
+                        }
+                        res.status(err.code).json(errorResponse);
+                        logger.warn(`FAILED REQUEST [${req.method} ${req.url}]: ${err.code} ${err.message}`, { ctx: (req as any).ctx, errorResponse });
+                    } else if (err.isAxiosError) {
+                        const { response: errResponse } = err;
+                        if (errResponse) {
                             const response = {
                                 code: errResponse.status,
                                 message: errResponse.statusText,
                                 data: errResponse.data,
-                           };
-                            logger.error(`Fail to handle request ${req.url}: Downstream error from ${err.response.config?.method} ${err.response.config?.url}`, { response });
+                            };
+                            logger.error(`FAILED REQUEST [${req.method} ${req.url}]: Downstream error from ${err.response.config?.method} ${err.response.config?.url}`, { ctx: (req as any).ctx, response });
                             res.status(errResponse.status).json(response);
                         } else {
-                            logger.error(`Fail to handle request ${req.url}`);
+                            logger.error(`FAILED REQUEST [${req.method} ${req.url}]`, { ctx: (req as any).ctx });
                             next(err);
                         }
                     } else {
-                        logger.error(`Fail to handle request ${req.url}`);
+                        logger.error(`FAILED REQUEST [${req.method} ${req.url}]`, { ctx: (req as any).ctx });
                         next(err);
                     }
                 });

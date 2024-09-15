@@ -38,7 +38,7 @@ export async function initMikroOrm() {
 
     logger.info('Initing MikroOrm...');
     orm = await MikroORM.init(config);
-    logger.info('Inited MikroOrm.');
+    logger.info('Inited MikroOrm.', { something: 1233});
 }
 
 export async function closeDb() {
