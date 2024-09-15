@@ -2,6 +2,7 @@ import express from 'express';
 import logger from './logger';
 import { ApiRequest } from 'types/context';
 import { ServerError } from './errors';
+import * as _ from 'lodash';
 
 // express js 4 handles exception for only synchronous handler
 // for async, need to explicitly call next(error), otherwise app crashes.
@@ -12,11 +13,13 @@ export const apiHandler =
             res: express.Response,
             next: express.NextFunction,
         ) => {
-            logger.info(`REQUEST [${req.method} ${req.url}]`);
+            const startTime = Date.now();
+            const ctx = _.get(req, 'ctx') ?? {}
+            logger.info(`REQUEST [${req.method} ${req.url}]`, { ctx });
             execute(req as ApiRequest, res)
                 .then((data) => {
                     res.send(data);
-                    logger.info(`DONE. REQUEST 200 [${req.method} ${req.url}]`);
+                    logger.info(`DONE-REQUEST. [${req.method} ${req.url}]: 200 in ${Date.now() - startTime}ms`, { ctx });
                 })
                 .catch((err) => {
                     if (err instanceof ServerError) {
