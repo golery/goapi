@@ -76,7 +76,7 @@ function getGcpUploadStream(filePath: string): NodeJS.WritableStream {
     return bucket.file(filePath).createWriteStream();
 }
 
-function getBucket(): Bucket {
+export function getBucket(): Bucket {
     const { projectId, clientEmail, privateKey } =
         services().config.get().gcp;
     const storage = new Storage({

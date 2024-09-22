@@ -55,5 +55,4 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 1. ./scripts/deploy-sandbox to build and deploy a sandbox version to koyb
 2. ./scripts/release: create tag for release 
 3. manually pull and run the docker image on gcp
-   TAG=latest
-   source run-goapi.sh
+TAG=20240922180503 source /home/lyhoanghai/app-configs/scripts/run-goapi.sh

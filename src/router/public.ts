@@ -5,6 +5,7 @@ import { signIn, signInGoogle, signup } from '../services/AccountService';
 import { AppIds } from '../contants';
 import { services } from '../services/Factory';
 import { downloadFile } from '../services/FileService';
+import { healthCheck } from '../services/HealthService';
 
 export const getPublicRouter = (): Router => {
     const router = express.Router();
@@ -47,6 +48,13 @@ export const getPublicRouter = (): Router => {
         '/file/:id',
         apiHandler(async (req, res) => {
             await downloadFile(req.params.id, res);
+        }),
+    );
+
+    router.get(
+        '/health',
+        apiHandler(async () => {
+            return await healthCheck();        
         }),
     );
 
