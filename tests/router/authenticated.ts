@@ -58,7 +58,9 @@ describe('router/authenticated', () => {
             const buffer = fs.readFileSync(filePath);
             const testUser = await setupUser();
             const { key }: UploadFileResponse = await sendRequest(testUser, request(app)
-                .post('/api/file/stocky/png').send(buffer));
+                .post('/api/file/stocky')
+                .set('Content-Type', 'image/png')
+                .send(buffer));            
             assert.isTrue(key.startsWith('stocky.'));;
 
             const downnloadResponse: Buffer = (await request(app)

@@ -33,28 +33,10 @@ export const getAuthenticatedRouter = (): Router => {
     router.use(authMiddleware);
 
     router.post(
-        '/file/:app/:fileExt',
+        '/file/:app',
         apiHandler(async (req) => {
             return uploadFile(req);
       }),
-    );
-
-    // Deprecatd used by pencil with multer upload
-    // Replaced by '/file/:app/:fileExt'
-    router.post(
-        '/file/:app',
-        upload.single('file'),
-        apiHandler(async (req, res) => {
-            const file = (req as any).file;
-            const uploadParams = {
-                app: req.params.app,
-                fileName: file.originalname,
-                mime: file.mimetype,
-                buffer: file.buffer,
-            };
-            const response = await services().imageService.upload(uploadParams);
-            res.send(response);
-        }),
     );
 
     router.get(

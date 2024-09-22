@@ -9,13 +9,20 @@ import { getEm } from "./db";
 import { ApiRequest } from "../types/context";
 import { Express, Response } from "express";
 import { Bucket, Storage } from "@google-cloud/storage";
+import { extension } from 'mime-types';
 
 const MAX_SIZE = 1024 * 1024 * 3
 
 export async function uploadFile(req: ApiRequest) {
     // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
     const startTime = Date.now()
-    const fileExt: string = req.params.fileExt;
+    const contentType = req.header('content-type');
+    if (!contentType || !contentType?.startsWith('image')) {
+        throw new ServerError(400, `Unsupported content type ${contentType}`);
+    }
+
+    const fileExt = extension(contentType);
+
     const app = req.params.app;
     const fileKey = `${app}.${uuidv4()}.${fileExt}`
     let filePath = `${app}/${fileKey}`;
