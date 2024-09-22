@@ -5,13 +5,6 @@ It's completely written in nodejs + typescript + expressjs
 # URL:
 localhost:5000/api2/image/imgur
 
-# RELEASE
-At local:
-./script/build-image.sh
-./script/push-image.sh
-Test image at local (with prod config)
-./script/run-image.sh
-
 # DEPLOY to KOYEB
 Deployed to https://app.koyeb.com
 Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker configuration
@@ -56,7 +49,9 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 1. appId: number (int2 = smallint)
 
 
-# RELEASE TO SANDBOX
+# RELEASE
 1. ./scripts/deploy-sandbox to build and deploy a sandbox version to koyb
 2. ./scripts/release: create tag for release 
-   manually pull and run the docker image on gcp
+3. manually pull and run the docker image on gcp
+   TAG=latest
+   source run-goapi.sh

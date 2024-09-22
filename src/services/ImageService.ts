@@ -17,39 +17,6 @@ export interface ImageUploadRequest {
 const pipeline = util.promisify(stream.pipeline);
 
 export class ImageService {
-    //
-    // async uploadS3(request: ImageUploadRequest) {
-    //     const id = uuidv4();
-    //     const ext = path.extname(request.fileName) || mime.extension(request.mime) || '';
-    //     const config = services().config.get();
-    //     const s3Client = services().amazonService.getS3Client();
-    //
-    //     const params: PutObjectCommandInput = {
-    //         Bucket: config.s3Bucket,
-    //         Key: `${request.app}.${id}${ext}`,
-    //         Body: request.buffer,
-    //         ContentType: request.mime
-    //     };
-    //     const results = await s3Client.send(new PutObjectCommand(params));
-    //     logger.info('Created file in S3.', {bucket: params.Bucket, key: params.Key});
-    //     return {bucket: params.Bucket, key: params.Key, data: results, contentType: params.ContentType}; // For unit tests.
-    // }
-
-    // async downloadS3(id: string) {
-    //     const config = services().config.get();
-    //     const s3Client = services().amazonService.getS3Client();
-    //     const bucketParams = {
-    //         Bucket: config.s3Bucket,
-    //         Key: id,
-    //     };
-    //     try {
-    //         const data: GetObjectCommandOutput = await s3Client.send(new GetObjectCommand(bucketParams));
-    //         return {data: data.Body, contentType: data.ContentType};
-    //     } catch (e) {
-    //         logger.warn(`S3 Key not found ${id}`);
-    //     }
-    // }
-
     // https://googleapis.dev/nodejs/storage/latest/File.html#createWriteStream
     async upload(request: ImageUploadRequest) {
         console.log('Upload', request.fileName, request.mime);
@@ -71,6 +38,14 @@ export class ImageService {
 
         await pipeline(fromStream, toStream);
         return { key };
+    }
+
+    async uploadStream(fromStream: NodeJS.ReadableStream) {
+        const id = uuidv4();
+        const bucket = this.getBucket();
+        const toStream = bucket.file(`test-${id}`).createWriteStream();        
+        await fromStream.pipe(toStream);
+        return { id };
     }
 
     getBucket(): Bucket {

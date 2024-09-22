@@ -157,5 +157,10 @@ describe('router/public', function () {
         });
     });
 
-
+    it('#config', async () => {
+        const { body: config } = await request(app)
+        .get('/api/public/config/stocky')    
+        .expect(200);
+        assert.deepEqual(config, { appId: AppIds.STOCKY, minVersion: 1, apiBaseUrl: 'https://api.stocky.io' });
+    });
 });

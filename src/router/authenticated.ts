@@ -9,7 +9,11 @@ import logger from '../utils/logger';
 import { CreateGroupRequestSchema } from '../types/schemas';
 import { createGroup, getUserInfo } from '../services/AccountService';
 import { ServerError } from '../utils/errors';
+import * as fs from 'fs';
+import { Transform, Readable } from 'stream';
+import { ReadableStream, } from 'stream/web';
 
+const MAX_SIZE = 1024 * 1024 * 3
 const upload = multer({
     limits: {
         fileSize: 1024 * 1024 * 3,
@@ -23,6 +27,44 @@ const upload = multer({
 export const getAuthenticatedRouter = (): Router => {
     const router = express.Router();
     router.use(authMiddleware);
+
+    // FIXME: rename
+    router.post(
+        '/file/stream',
+        async (req, res, next) => {
+            // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
+            const startTime = Date.now()
+            console.log('Uploading file')
+            const file = fs.createWriteStream('file.png');
+
+            let size = 0;
+
+
+            // Create a Transform stream to intercept and count bytes
+            const transform = new Transform({
+                transform(chunk, encoding, callback) {
+                    size += chunk.length; // Increment byte count
+                    if (size > MAX_SIZE) {
+                        throw new ServerError(400, `File too large: ${size}`);
+                    }
+                    console.log(`Uploaded ${size} bytes...`);
+                    // 1st param of callback is an error
+                    callback(null, chunk);
+                }
+            });           
+            req.on('end', () => {
+                logger.info(`Uploaded file of size ${size} in ${Date.now()-startTime}ms`);
+                res.json('done');
+            })
+            req.on('error', (err) => {
+                logger.error(`Failed to upload file`, { err });
+                file.close();
+                throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);
+            })
+            const afterTransform: NodeJS.ReadableStream =req.pipe(transform);
+            const response = await services().imageService.uploadStream(afterTransform);
+        },
+    );
 
     router.post(
         '/file/:app',
@@ -129,19 +171,19 @@ export const getAuthenticatedRouter = (): Router => {
     // ping and return current authenticated user
     router.get(
         '/ping',
-        apiHandler(async (req) => {        
-            logger.info('Pinged', { ctx: req.ctx, url: req.url });            
-            return req.ctx;        
+        apiHandler(async (req) => {
+            logger.info('Pinged', { ctx: req.ctx, url: req.url });
+            return req.ctx;
         }),
     );
 
-    router.post('/group', apiHandler(async (req) => {    
+    router.post('/group', apiHandler(async (req) => {
         return await createGroup(req.ctx);
     }));
 
     router.get('/user', apiHandler(async (req) => {
         return await getUserInfo(req.ctx);
     }));
-    
+
     return router;
 };
