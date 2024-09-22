@@ -26,6 +26,7 @@ export const getOpsRouter = (): Router => {
     const router = express.Router();
     router.use(authMiddleware);
 
+    // Move fiels between buckets
     router.post(
         '/move',
         apiHandler(async (req) => {
