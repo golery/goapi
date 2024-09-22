@@ -19,6 +19,7 @@ export interface ImageUploadRequest {
 const pipeline = util.promisify(stream.pipeline);
 
 export class ImageService {
+    //deprecated
     // https://googleapis.dev/nodejs/storage/latest/File.html#createWriteStream
     async upload(request: ImageUploadRequest) {
         console.log('Upload', request.fileName, request.mime);
@@ -42,11 +43,7 @@ export class ImageService {
         return { key };
     }
 
-    getGcpUploadStream(filePath: string): NodeJS.WritableStream {
-        const bucket = this.getBucket();
-        return bucket.file(filePath).createWriteStream();
-    }
-
+    //deprecated
     getBucket(): Bucket {
         const { projectId, clientEmail, privateKey } =
             services().config.get().gcp;
@@ -58,28 +55,5 @@ export class ImageService {
             },
         });
         return storage.bucket(services().config.get().s3Bucket);
-    }
-
-    async download(key: string, response: express.Response) {
-        try {
-            const [app] = key.split('.');
-            let path = key;
-            if (app !== 'pencil') {
-                path = `${app}/${key}`;
-            } 
-
-            const file = this.getBucket().file(path);
-            const [meta] = await file.getMetadata();
-            const fromStream = await file.createReadStream();
-            response.contentType(meta.contentType);
-            await pipeline(fromStream, response);
-        } catch (err) {
-            if ((err as any).code === 404) {
-                logger.error(`Failed to download file. File not found ${key}`, { key, err });
-                throw new ServerError(404, `Failed to download file. ${(err as any).errors?.[0]?.message}`);    
-            }
-            logger.error('Failed to download file', { key, err });
-            throw new ServerError(500, 'Failed to download file');
-        }
     }
 }

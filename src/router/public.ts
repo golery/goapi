@@ -4,6 +4,7 @@ import { SignInGoogleRequestSchema, SignInRequestSchema, SignUpRequestSchema } f
 import { signIn, signInGoogle, signup } from '../services/AccountService';
 import { AppIds } from '../contants';
 import { services } from '../services/Factory';
+import { downloadFile } from '../services/FileService';
 
 export const getPublicRouter = (): Router => {
     const router = express.Router();
@@ -45,7 +46,7 @@ export const getPublicRouter = (): Router => {
     router.get(
         '/file/:id',
         apiHandler(async (req, res) => {
-            await services().imageService.download(req.params.id, res);
+            await downloadFile(req.params.id, res);
         }),
     );
 
