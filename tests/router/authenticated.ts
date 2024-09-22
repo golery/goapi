@@ -60,9 +60,14 @@ describe('router/authenticated', () => {
                 .post('/api/file/stocky/png').send(buffer));
             assert.isTrue(key.startsWith('stocky.'));;
 
-            const downnloadResponse: Buffer = await sendRequest(testUser, request(app)
-                .get(`/api/public/file/${key}`));
+            const downnloadResponse: Buffer = (await request(app)
+                .get(`/api/public/file/${key}`).expect(200)).body;
             assert.equal(downnloadResponse.length, buffer.length);
+        });
+
+        it('#it.download not found', async () => {
+            const testUser = await setupUser();
+            await request(app).get(`/api/public/file/invalid-key`).expect
         });
     });
 });

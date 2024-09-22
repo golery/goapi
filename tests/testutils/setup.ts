@@ -24,10 +24,10 @@ export async function setupUser(): Promise<TestUser> {
     return { userId: user.id, appId: AppIds.TEST, token: createAccessToken(user) };
 }
 
-export async function sendRequest<T>(user: TestUser, request: Test): Promise<T> {
+export async function sendRequest<T>(user: TestUser, request: Test, opts: { status?: number} = {}): Promise<T> {
     const result = await request.set('Authorization', `Bearer ${user.token}`)
     .set('appId', `${user.appId}`)
-    .expect(200);
+    .expect(opts.status ?? 200);
     return result.body;
 }
 
