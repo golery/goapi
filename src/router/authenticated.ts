@@ -14,7 +14,8 @@ import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 
-const MAX_SIZE = 1024 * 1024 * 3
+// const MAX_SIZE = 1024 * 1024 * 3
+const MAX_SIZE = 10
 const upload = multer({
     limits: {
         fileSize: 1024 * 1024 * 3,
@@ -31,7 +32,7 @@ export const getAuthenticatedRouter = (): Router => {
 
     router.post(
         '/file/:app/:fileExt',
-        async (req, res, next) => {
+        apiHandler(async (req, res) => {
             // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
             const startTime = Date.now()
             const fileExt: string = req.params.fileExt;
@@ -46,10 +47,10 @@ export const getAuthenticatedRouter = (): Router => {
                 transform(chunk, encoding, callback) {
                     size += chunk.length; // Increment byte count
                     if (size > MAX_SIZE) {
-                        throw new ServerError(400, `File too large: ${size}`);
+                        callback(new ServerError(400, `File too large: ${size}`));                    
+                    } else {               
+                        callback(null, chunk);
                     }
-                    // 1st param of callback is an error
-                    callback(null, chunk);
                 }
             });
 
@@ -58,12 +59,15 @@ export const getAuthenticatedRouter = (): Router => {
             try {
                 await pipeline(req, transform, uploadStream);
                 logger.info(`Uploaded file ${filePath} ${size} bytes in ${Date.now() - startTime}ms`);
-                res.json( { key: fileName });
+                return { key: fileName };
             } catch (err) {
                 logger.error(`Failed to upload file`, { err });
+                if (err instanceof ServerError) {
+                    throw err;
+                }
                 throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);
             }
-        },
+        }),
     );
 
     // Deprecatd used by pencil with multer upload
