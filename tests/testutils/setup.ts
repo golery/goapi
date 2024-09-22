@@ -1,7 +1,7 @@
 import { Test } from 'supertest';
 import { User } from '../../src/entity/User.entity';
 import { createAccessToken } from '../../src/services/AccountService';
-import { orm } from '../../src/services/db';
+import { getEm, orm } from '../../src/services/db';
 import * as uuid from 'uuid';
 import { AppIds } from '../../src/contants';
 
@@ -31,3 +31,6 @@ export async function sendRequest<T>(user: TestUser, request: Test, opts: { stat
     return result.body;
 }
 
+export async function getTestEm() {
+    return getEm().fork()
+}

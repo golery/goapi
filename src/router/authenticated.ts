@@ -1,3 +1,4 @@
+import { Entity } from 'typeorm';
 import express, { Router } from 'express';
 import { services } from '../services/Factory';
 import multer from 'multer';
@@ -5,6 +6,7 @@ import { apiHandler } from '../utils/express-utils';
 import { Node } from '../entity/Node';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { syncRecords } from '../services/RecordService';
+import { File } from '../entity/File.entity';
 import logger from '../utils/logger';
 import { CreateGroupRequestSchema } from '../types/schemas';
 import { createGroup, getUserInfo } from '../services/AccountService';
@@ -13,6 +15,7 @@ import * as fs from 'fs';
 import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
+import { getEm } from '../services/db';
 
 const MAX_SIZE = 1024 * 1024 * 3
 const upload = multer({
@@ -36,8 +39,8 @@ export const getAuthenticatedRouter = (): Router => {
             const startTime = Date.now()
             const fileExt: string = req.params.fileExt;
             const app = 'stocky';
-            const fileName = `${app}.${uuidv4()}.${fileExt}`
-            const filePath = `${app}/${fileName}`;
+            const fileKey = `${app}.${uuidv4()}.${fileExt}`
+            const filePath = `${app}/${fileKey}`;
             logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
             
             let size = 0;
@@ -57,8 +60,15 @@ export const getAuthenticatedRouter = (): Router => {
             const uploadStream = services().imageService.getGcpUploadStream(filePath);
             try {
                 await pipeline(req, transform, uploadStream);
+                const file = new File();
+                const ctx = req.ctx;
+                file.appId = ctx.appId;
+                file.userId = ctx.userId
+                file.key = fileKey
+                file.size = size
+                getEm().persistAndFlush(file);
                 logger.info(`Uploaded file ${filePath} ${size} bytes in ${Date.now() - startTime}ms`);
-                return { key: fileName };
+                return { key: fileKey };
             } catch (err) {
                 logger.error(`Failed to upload file`, { err });
                 if (err instanceof ServerError) {

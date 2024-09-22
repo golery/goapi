@@ -6,12 +6,13 @@ import { loadConfig } from '../../src/services/ConfigService';
 import { APP_ID_HEADER, AppIds, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
-import { sendRequest, setupUser } from '../testutils/setup';
+import { getTestEm, sendRequest, setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
 import { CreateGroupResponse, GetUserResponse, UploadFileResponse } from '../../src/types/schemas';
 import * as fs from 'fs'
 import * as path from 'path'
+import { File } from '../../src/entity/File.entity';
 
 describe('router/authenticated', () => {
     before(async () => {
@@ -63,6 +64,11 @@ describe('router/authenticated', () => {
             const downnloadResponse: Buffer = (await request(app)
                 .get(`/api/public/file/${key}`).expect(200)).body;
             assert.equal(downnloadResponse.length, buffer.length);
+
+            const file = await (await getTestEm()).findOneOrFail(File, { key });
+            assert.equal(file.userId, testUser.userId);
+            assert.equal(file.appId, testUser.appId);
+            assert.equal(file.size, buffer.length);
         });
 
         it('#it.download not found', async () => {                
