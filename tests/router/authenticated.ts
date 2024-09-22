@@ -69,5 +69,5 @@ describe('router/authenticated', () => {
             const testUser = await setupUser();
             await request(app).get(`/api/public/file/invalid-key`).expect
         });
-    });
+    }); 
 });

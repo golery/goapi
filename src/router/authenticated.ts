@@ -14,8 +14,7 @@ import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 
-// const MAX_SIZE = 1024 * 1024 * 3
-const MAX_SIZE = 10
+const MAX_SIZE = 1024 * 1024 * 3
 const upload = multer({
     limits: {
         fileSize: 1024 * 1024 * 3,
