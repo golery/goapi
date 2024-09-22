@@ -12,6 +12,7 @@ import { ServerError } from '../utils/errors';
 import * as fs from 'fs';
 import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
+import { v4 as uuidv4 } from 'uuid';
 
 const MAX_SIZE = 1024 * 1024 * 3
 const upload = multer({
@@ -30,11 +31,11 @@ export const getAuthenticatedRouter = (): Router => {
 
     // FIXME: rename
     router.post(
-        '/file/stream',
+        '/file/v2',
         async (req, res, next) => {
             // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
             const startTime = Date.now()
-            console.log('Uploading file')
+            logger.info('Uploading file')
             const file = fs.createWriteStream('file.png');
 
             let size = 0;
@@ -50,11 +51,15 @@ export const getAuthenticatedRouter = (): Router => {
                     callback(null, chunk);
                 }
             });
-            const uploadStream = services().imageService.uploadStream();
+
+            const fileExt: string = req.query.fileExt as string;
+            const app = 'stocky';
+            const filePath = `${app}/${app}.${uuidv4()}.${fileExt}`;
+            const uploadStream = services().imageService.getGcpUploadStream(filePath);
             try {
                 await pipeline(req, transform, uploadStream);
-                logger.info(`Uploaded file of size ${size} in ${Date.now() - startTime}ms`);
-                res.json('done');
+                logger.info(`Uploaded file ${filePath} ${size} bytes in ${Date.now() - startTime}ms`);
+                res.json( { filePath });
             } catch (err) {
                 logger.error(`Failed to upload file`, { err });
                 throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);

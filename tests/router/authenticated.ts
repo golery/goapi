@@ -10,6 +10,8 @@ import { sendRequest, setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
 import { CreateGroupResponse, GetUserResponse } from '../../src/types/schemas';
+import * as fs from 'fs'
+import * as path from 'path'
 
 describe('router/authenticated', () => {
     before(async () => {
@@ -46,6 +48,18 @@ describe('router/authenticated', () => {
             const userInfo: GetUserResponse = await sendRequest(testUser, request(app)
                 .get('/api/user'));
             assert.deepEqual(userInfo.groupIds, [group.id]);
+        });
+    });
+
+    describe('file', () => {
+        it('#it.upload then download', async () => {
+            
+            const filePath = path.join(__dirname, '../testdata', 'sample.png');
+            const buffer = fs.readFileSync(filePath);
+            const testUser = await setupUser();
+            const res: GetUserResponse = await sendRequest(testUser, request(app)
+                .post('/api/file/v2?fileExt=png').send(buffer));
+            assert.deepEqual(res, { } as any) ;
         });
     });
 });

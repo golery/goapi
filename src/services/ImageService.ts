@@ -40,11 +40,9 @@ export class ImageService {
         return { key };
     }
 
-    uploadStream(): NodeJS.WritableStream {
-        const id = uuidv4();
+    getGcpUploadStream(filePath: string): NodeJS.WritableStream {
         const bucket = this.getBucket();
-        const toStream = bucket.file(`test-${id}`).createWriteStream();        
-        return toStream
+        return bucket.file(filePath).createWriteStream();        
     }
 
     getBucket(): Bucket {
