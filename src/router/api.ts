@@ -1,8 +1,7 @@
 import express, { Router } from 'express';
+import { downloadFile } from '../services/FileService';
 import { apiHandler } from '../utils/express-utils';
-import { login } from '../services/AccountService';
 import { getAuthenticatedRouter } from './authenticated';
-import { services } from '../services/Factory';
 import { getBackendRouter } from './backend';
 import { getPublicRouter } from './public';
 
@@ -13,7 +12,7 @@ export const getApiRouter = (): Router => {
     router.get(
         '/file/:id',
         apiHandler(async (req, res) => {
-            await services().imageService.download(req.params.id, res);
+            await downloadFile(req.params.id, res);
         }),
     );
 
