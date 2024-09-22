@@ -51,7 +51,7 @@ describe('router/authenticated', () => {
         });
     });
 
-    describe('file', () => {
+    describe('#file', () => {
         it('#it.upload then download', async () => {
             const filePath = path.join(__dirname, '../testdata', 'sample.png');
             const buffer = fs.readFileSync(filePath);
@@ -65,9 +65,8 @@ describe('router/authenticated', () => {
             assert.equal(downnloadResponse.length, buffer.length);
         });
 
-        it('#it.download not found', async () => {
-            const testUser = await setupUser();
-            await request(app).get(`/api/public/file/invalid-key`).expect
+        it('#it.download not found', async () => {                
+            await request(app).get(`/api/public/file/invalid-key`).expect(404);
         });
     }); 
 });
