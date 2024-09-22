@@ -1,28 +1,12 @@
-import { Entity } from 'typeorm';
 import express, { Router } from 'express';
-import { services } from '../services/Factory';
-import multer from 'multer';
-import { apiHandler } from '../utils/express-utils';
 import { Node } from '../entity/Node';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
-import { syncRecords } from '../services/RecordService';
-import { File } from '../entity/File.entity';
-import logger from '../utils/logger';
-import { CreateGroupRequestSchema } from '../types/schemas';
 import { createGroup, getUserInfo } from '../services/AccountService';
-import { ServerError } from '../utils/errors';
-import * as fs from 'fs';
-import { Transform } from 'stream';
-import { pipeline } from 'stream/promises';
-import { v4 as uuidv4 } from 'uuid';
-import { getEm } from '../services/db';
+import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
-
-const upload = multer({
-    limits: {
-        fileSize: 1024 * 1024 * 3,
-    },
-});
+import { syncRecords } from '../services/RecordService';
+import { apiHandler } from '../utils/express-utils';
+import logger from '../utils/logger';
 
 /**
  * List of API examples.

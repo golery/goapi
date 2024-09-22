@@ -48,15 +48,23 @@ export function loadConfig(): Config {
 
 
 // deprecated, secrets should be loaded from getSecrets
-export class ConfigService {
-    get() {
-        if (!config) {
-            config = loadConfig();
-        }
-        return config;
-    }
-}
+// export class ConfigService {
+//     // deprecated, replaced by getConfig()
+//     get() {
+//         if (!config) {
+//             config = loadConfig();
+//         }
+//         return config;
+//     }
+// }
 
+
+export function getConfig(): Config {
+    if (!config) {
+        config = loadConfig();
+    }
+    return config;
+}
 export function isDev(): boolean {
     return process.env.NODE_ENV !== 'production';
 }

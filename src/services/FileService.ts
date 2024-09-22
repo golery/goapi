@@ -11,6 +11,7 @@ import { Express, Response } from "express";
 import { Bucket, Storage } from "@google-cloud/storage";
 import { extension } from 'mime-types';
 import { AppIds, getAppName } from "../contants";
+import { getConfig } from "./ConfigService";
 
 const MAX_SIZE = 1024 * 1024 * 3
 
@@ -78,7 +79,7 @@ function getGcpUploadStream(filePath: string): NodeJS.WritableStream {
 
 export function getBucket(): Bucket {
     const { projectId, clientEmail, privateKey } =
-        services().config.get().gcp;
+        getConfig().gcp;
     const storage = new Storage({
         projectId,
         credentials: {
