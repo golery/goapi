@@ -16,9 +16,13 @@ export async function uploadFile(req: ApiRequest) {
     // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
     const startTime = Date.now()
     const fileExt: string = req.params.fileExt;
-    const app = 'stocky';
+    const app = req.params.app;
     const fileKey = `${app}.${uuidv4()}.${fileExt}`
-    const filePath = `${app}/${fileKey}`;
+    let filePath = `${app}/${fileKey}`;
+    if (app == 'pencil') {
+        filePath = fileKey
+    }
+    
     logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
     
     let size = 0;
@@ -85,9 +89,10 @@ export async function downloadFile(key: string, response: Response) {
 
         const file = getBucket().file(path);
         const [meta] = await file.getMetadata();
-        const fromStream = await file.createReadStream();
+        const fromStream = await file.createReadStream(); 
         response.contentType(meta.contentType);
         await pipeline(fromStream, response);
+        logger.info(`Downloaded file ${key} ${meta.contentType}`);
     } catch (err) {
         if ((err as any).code === 404) {
             logger.error(`Failed to download file. File not found ${key}`, { key, err });

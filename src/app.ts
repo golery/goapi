@@ -11,10 +11,10 @@ import 'reflect-metadata';
 export const app = express();
 loadConfig();
 app.set('port', process.env.PORT || 8200);
-// app.use(cors());
-// app.use(compression());
-// app.use(express.json());
-// app.use(express.urlencoded({extended: true}));
+app.use(cors());
+app.use(compression());
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 app.use((req, res, next) => {
     res.locals.user = req.user;
     // fork orm.em for each request
