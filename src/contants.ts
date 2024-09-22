@@ -1,9 +1,26 @@
+import { ServerError } from "./utils/errors";
+
 export enum AppIds {
     PENCIL = 1,
     // Inventory app
     STOCKY = 2,
     TEST = 999,
     TEST2 = 998,
+}
+
+const AppIdToName: Record<AppIds, string> = {
+    [AppIds.PENCIL]: 'pencil',
+    [AppIds.STOCKY]: 'stocky',
+    [AppIds.TEST]: 'test',
+    [AppIds.TEST2]: 'test2',
+}
+
+export function getAppName(appId: AppIds) {
+    const name = AppIdToName[appId];
+    if (!name) {
+        throw new ServerError(400, `Invalid appId ${appId}`);
+    }
+    return name;
 }
 
 export const APP_ID_HEADER = 'appId';

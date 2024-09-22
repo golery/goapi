@@ -33,7 +33,7 @@ export const getAuthenticatedRouter = (): Router => {
     router.use(authMiddleware);
 
     router.post(
-        '/file/:app',
+        '/file',
         apiHandler(async (req) => {
             return uploadFile(req);
       }),

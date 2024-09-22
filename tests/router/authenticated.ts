@@ -3,7 +3,7 @@ import request from 'supertest';
 import { describe } from 'mocha';
 import { closeDb, initMikroOrm } from '../../src/services/db';
 import { loadConfig } from '../../src/services/ConfigService';
-import { APP_ID_HEADER, AppIds, GROUP_ID_HEADER } from '../../src/contants';
+import { APP_ID_HEADER, AppIds, getAppName, GROUP_ID_HEADER } from '../../src/contants';
 import * as uuid from 'uuid';
 import { assert } from 'chai';
 import { getTestEm, sendRequest, setupUser } from '../testutils/setup';
@@ -56,12 +56,12 @@ describe('router/authenticated', () => {
         it('#it.upload then download', async () => {
             const filePath = path.join(__dirname, '../testdata', 'sample.png');
             const buffer = fs.readFileSync(filePath);
-            const testUser = await setupUser();
+            const testUser = await setupUser();        
             const { key }: UploadFileResponse = await sendRequest(testUser, request(app)
-                .post('/api/file/stocky')
+                .post(`/api/file`)
                 .set('Content-Type', 'image/png')
                 .send(buffer));            
-            assert.isTrue(key.startsWith('stocky.'));;
+            assert.isTrue(key.startsWith(`${getAppName(testUser.appId)}.`));;
 
             const downnloadResponse: Buffer = (await request(app)
                 .get(`/api/public/file/${key}`).expect(200)).body;

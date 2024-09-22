@@ -21,8 +21,6 @@ app.use((req, res, next) => {
     RequestContext.create(getEm(), next);
 });
 
-// api2 is deprecated (pencil still uses it, also check the mobile side)
-app.use('/api2', getApiRouter());
 app.use('/api', getApiRouter());
 app.use('/', (req, res) => {
     res.send('ping');

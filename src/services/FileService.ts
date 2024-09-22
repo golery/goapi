@@ -10,26 +10,30 @@ import { ApiRequest } from "../types/context";
 import { Express, Response } from "express";
 import { Bucket, Storage } from "@google-cloud/storage";
 import { extension } from 'mime-types';
+import { AppIds, getAppName } from "../contants";
 
 const MAX_SIZE = 1024 * 1024 * 3
 
 export async function uploadFile(req: ApiRequest) {
     // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
     const startTime = Date.now()
+    const ctx = req.ctx;
     const contentType = req.header('content-type');
     if (!contentType || !contentType?.startsWith('image')) {
         throw new ServerError(400, `Unsupported content type ${contentType}`);
     }
 
     const fileExt = extension(contentType);
+    const appId = ctx.appId;
 
-    const app = req.params.app;
-    const fileKey = `${app}.${uuidv4()}.${fileExt}`
-    let filePath = `${app}/${fileKey}`;
-    if (app == 'pencil') {
-        filePath = fileKey
+    const appName = getAppName(appId);
+    const fileKey = `${appName}.${uuidv4()}.${fileExt}`
+    let filePath = `${appName}/${fileKey}`;
+    if (appId === AppIds.PENCIL) {
+        filePath = fileKey;
     }
-    
+
+
     logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
     
     let size = 0;
@@ -55,7 +59,7 @@ export async function uploadFile(req: ApiRequest) {
         file.userId = ctx.userId
         file.key = fileKey
         file.size = size
-        getEm().persistAndFlush(file);
+        await getEm().persistAndFlush(file);
         logger.info(`Uploaded file ${filePath} ${size} bytes in ${Date.now() - startTime}ms`);
         return { key: fileKey };
     } catch (err) {
@@ -63,7 +67,7 @@ export async function uploadFile(req: ApiRequest) {
         if (err instanceof ServerError) {
             throw err;
         }
-        throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);
+        throw new ServerError(500, `Failed to upload file. Uploades so far ${size}. ${(err as any).message}`);
     }
 }
 
