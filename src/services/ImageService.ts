@@ -40,12 +40,11 @@ export class ImageService {
         return { key };
     }
 
-    async uploadStream(fromStream: NodeJS.ReadableStream) {
+    uploadStream(): NodeJS.WritableStream {
         const id = uuidv4();
         const bucket = this.getBucket();
         const toStream = bucket.file(`test-${id}`).createWriteStream();        
-        await fromStream.pipe(toStream);
-        return { id };
+        return toStream
     }
 
     getBucket(): Bucket {

@@ -10,8 +10,8 @@ import { CreateGroupRequestSchema } from '../types/schemas';
 import { createGroup, getUserInfo } from '../services/AccountService';
 import { ServerError } from '../utils/errors';
 import * as fs from 'fs';
-import { Transform, Readable } from 'stream';
-import { ReadableStream, } from 'stream/web';
+import { Transform } from 'stream';
+import { pipeline } from 'stream/promises';
 
 const MAX_SIZE = 1024 * 1024 * 3
 const upload = multer({
@@ -38,8 +38,6 @@ export const getAuthenticatedRouter = (): Router => {
             const file = fs.createWriteStream('file.png');
 
             let size = 0;
-
-
             // Create a Transform stream to intercept and count bytes
             const transform = new Transform({
                 transform(chunk, encoding, callback) {
@@ -51,18 +49,16 @@ export const getAuthenticatedRouter = (): Router => {
                     // 1st param of callback is an error
                     callback(null, chunk);
                 }
-            });           
-            req.on('end', () => {
-                logger.info(`Uploaded file of size ${size} in ${Date.now()-startTime}ms`);
+            });
+            const uploadStream = services().imageService.uploadStream();
+            try {
+                await pipeline(req, transform, uploadStream);
+                logger.info(`Uploaded file of size ${size} in ${Date.now() - startTime}ms`);
                 res.json('done');
-            })
-            req.on('error', (err) => {
+            } catch (err) {
                 logger.error(`Failed to upload file`, { err });
-                file.close();
                 throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);
-            })
-            const afterTransform: NodeJS.ReadableStream =req.pipe(transform);
-            const response = await services().imageService.uploadStream(afterTransform);
+            }
         },
     );
 
