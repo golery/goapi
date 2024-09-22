@@ -29,15 +29,17 @@ export const getAuthenticatedRouter = (): Router => {
     const router = express.Router();
     router.use(authMiddleware);
 
-    // FIXME: rename
     router.post(
-        '/file/v2',
+        '/file/:app/:fileExt',
         async (req, res, next) => {
             // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
             const startTime = Date.now()
-            logger.info('Uploading file')
-            const file = fs.createWriteStream('file.png');
-
+            const fileExt: string = req.params.fileExt;
+            const app = 'stocky';
+            const fileName = `${app}.${uuidv4()}.${fileExt}`
+            const filePath = `${app}/${fileName}`;
+            logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
+            
             let size = 0;
             // Create a Transform stream to intercept and count bytes
             const transform = new Transform({
@@ -46,20 +48,17 @@ export const getAuthenticatedRouter = (): Router => {
                     if (size > MAX_SIZE) {
                         throw new ServerError(400, `File too large: ${size}`);
                     }
-                    console.log(`Uploaded ${size} bytes...`);
                     // 1st param of callback is an error
                     callback(null, chunk);
                 }
             });
 
-            const fileExt: string = req.query.fileExt as string;
-            const app = 'stocky';
-            const filePath = `${app}/${app}.${uuidv4()}.${fileExt}`;
+        
             const uploadStream = services().imageService.getGcpUploadStream(filePath);
             try {
                 await pipeline(req, transform, uploadStream);
                 logger.info(`Uploaded file ${filePath} ${size} bytes in ${Date.now() - startTime}ms`);
-                res.json( { filePath });
+                res.json( { key: fileName });
             } catch (err) {
                 logger.error(`Failed to upload file`, { err });
                 throw new ServerError(500, `Failed to upload file. Uploades so far ${size}`);
@@ -67,6 +66,8 @@ export const getAuthenticatedRouter = (): Router => {
         },
     );
 
+    // Deprecatd used by pencil with multer upload
+    // Replaced by '/file/:app/:fileExt'
     router.post(
         '/file/:app',
         upload.single('file'),

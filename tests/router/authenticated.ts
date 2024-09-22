@@ -9,7 +9,7 @@ import { assert } from 'chai';
 import { sendRequest, setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
-import { CreateGroupResponse, GetUserResponse } from '../../src/types/schemas';
+import { CreateGroupResponse, GetUserResponse, UploadFileResponse } from '../../src/types/schemas';
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -40,7 +40,7 @@ describe('router/authenticated', () => {
             const testUser = await setupUser();
             // Given a user create a group
             const group: CreateGroupResponse = await sendRequest(testUser, request(app)
-                .post('/api/group')            
+                .post('/api/group')
             );
             assert.equal(group.appId, AppIds.TEST);
 
@@ -53,13 +53,16 @@ describe('router/authenticated', () => {
 
     describe('file', () => {
         it('#it.upload then download', async () => {
-            
             const filePath = path.join(__dirname, '../testdata', 'sample.png');
             const buffer = fs.readFileSync(filePath);
             const testUser = await setupUser();
-            const res: GetUserResponse = await sendRequest(testUser, request(app)
-                .post('/api/file/v2?fileExt=png').send(buffer));
-            assert.deepEqual(res, { } as any) ;
+            const { key }: UploadFileResponse = await sendRequest(testUser, request(app)
+                .post('/api/file/stocky/png').send(buffer));
+            assert.isTrue(key.startsWith('stocky.'));;
+
+            const downnloadResponse: Buffer = await sendRequest(testUser, request(app)
+                .get(`/api/public/file/${key}`));
+            assert.equal(downnloadResponse.length, buffer.length);
         });
     });
 });

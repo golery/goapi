@@ -9,6 +9,7 @@ import { getPublicRouter } from './public';
 export const getApiRouter = (): Router => {
     const router = express.Router();
 
+    // deprecated, replaced by /public/
     router.get(
         '/file/:id',
         apiHandler(async (req, res) => {
@@ -16,6 +17,7 @@ export const getApiRouter = (): Router => {
         }),
     );
 
+    // deprecated
     router.use('/backend', getBackendRouter());
 
     router.use('/public', getPublicRouter());

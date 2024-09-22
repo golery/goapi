@@ -3,6 +3,7 @@ import { apiHandler } from '../utils/express-utils';
 import { SignInGoogleRequestSchema, SignInRequestSchema, SignUpRequestSchema } from '../types/schemas';
 import { signIn, signInGoogle, signup } from '../services/AccountService';
 import { AppIds } from '../contants';
+import { services } from '../services/Factory';
 
 export const getPublicRouter = (): Router => {
     const router = express.Router();
@@ -40,5 +41,13 @@ export const getPublicRouter = (): Router => {
             };        
         }),
     );
+
+    router.get(
+        '/file/:id',
+        apiHandler(async (req, res) => {
+            await services().imageService.download(req.params.id, res);
+        }),
+    );
+
     return router;
 };

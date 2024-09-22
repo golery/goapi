@@ -47,3 +47,7 @@ export interface CreateGroupResponse {
     appId: number,
     id: number,
 }
+
+export interface UploadFileResponse {
+    key: string,
+}

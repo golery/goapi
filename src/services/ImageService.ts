@@ -6,6 +6,8 @@ import { Bucket, Storage } from '@google-cloud/storage';
 import * as stream from 'stream';
 import * as util from 'util';
 import express from 'express';
+import logger from '../utils/logger';
+import { ServerError } from '../utils/errors';
 
 export interface ImageUploadRequest {
     app: string;
@@ -42,7 +44,7 @@ export class ImageService {
 
     getGcpUploadStream(filePath: string): NodeJS.WritableStream {
         const bucket = this.getBucket();
-        return bucket.file(filePath).createWriteStream();        
+        return bucket.file(filePath).createWriteStream();
     }
 
     getBucket(): Bucket {
@@ -59,10 +61,25 @@ export class ImageService {
     }
 
     async download(key: string, response: express.Response) {
-        const file = this.getBucket().file(key);
-        const [meta] = await file.getMetadata();
-        const fromStream = await file.createReadStream();
-        response.contentType(meta.contentType);
-        await pipeline(fromStream, response);
+        try {
+            const [app] = key.split('.');
+            let path = key;
+            if (app !== 'pencil') {
+                path = `${app}/${key}`;
+            } 
+
+            const file = this.getBucket().file(path);
+            const [meta] = await file.getMetadata();
+            const fromStream = await file.createReadStream();
+            response.contentType(meta.contentType);
+            await pipeline(fromStream, response);
+        } catch (err) {
+            if ((err as any).code === 404) {
+                logger.error(`Failed to download file. File not found ${key}`, { key, err });
+                throw new ServerError(404, `Failed to download file. ${(err as any).errors?.[0]?.message}`);    
+            }
+            logger.error('Failed to download file', { key, err });
+            throw new ServerError(500, 'Failed to download file');
+        }
     }
 }
