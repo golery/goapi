@@ -2,7 +2,7 @@ import { Bucket, Storage } from "@google-cloud/storage";
 import { Response } from "express";
 import { extension } from 'mime-types';
 import { Transform } from "stream";
-import { pipeline } from "stream/promises";
+import { finished, pipeline } from "stream/promises";
 import { v4 as uuidv4 } from 'uuid';
 import { getAppName } from "../contants";
 import { File } from "../entity/File.entity";
@@ -89,24 +89,31 @@ export function getBucket(): Bucket {
 
 export async function downloadFile(key: string, response: Response) {
     try {
-        const cacheFilePath = `/tmp/${key}}`
-        if (!fs.existsSync(cacheFilePath)) {
-            const [app] = key.split('.');
-            const path = `${app}/${key}`;
-            const file = getBucket().file(path);
-            const [meta] = await file.getMetadata();
-            const fromStream = await file.createReadStream();
-            const fileStream = fs.createWriteStream(cacheFilePath);
-            await pipeline(fromStream, fileStream);
-            logger.info(`Cache miss. Fetched file from gcp ${key} ${meta.contentType}`);
-        }
-
         const contentType = mime.contentType(key) || 'application/octet-stream';
-        response.contentType(contentType);                
-        const fileStream = fs.createReadStream(cacheFilePath);
-        await pipeline(fileStream, response);
-        logger.debug(`Downloaded file ${key}`, { key, contentType });
-        return;
+        response.contentType(contentType);
+
+        const cacheFilePath = `/tmp/${key}}`
+        if (fs.existsSync(cacheFilePath)) {            
+            const fileStream = fs.createReadStream(cacheFilePath);
+            await pipeline(fileStream, response);   
+            logger.info(`Cache miss. Fetched file from gcp ${key} ${contentType}`);         
+            console.log('====>');
+            return;
+        }
+        const [app] = key.split('.');
+        const path = `${app}/${key}`;
+        const gcpFile = getBucket().file(path);
+        const [meta] = await gcpFile.getMetadata();
+
+        const fromStream = await gcpFile.createReadStream();
+        const toFileStream = fs.createWriteStream(cacheFilePath);
+
+        fromStream.pipe(toFileStream);
+        fromStream.pipe(response);
+
+        await finished(toFileStream);    
+        await finished(response);    
+        logger.debug(`Downloaded file ${key}`, { key, contentType });        
     } catch (err) {
         if ((err as any).code === 404) {
             logger.error(`Failed to download file. File not found ${key}`, { key, err });

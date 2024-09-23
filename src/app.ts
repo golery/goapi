@@ -7,6 +7,7 @@ import {getApiRouter} from './router/api';
 import { RequestContext } from '@mikro-orm/core';
 import { getEm, orm } from './services/db';
 import { loadConfig } from './services/ConfigService';
+import { v4 as uuidv4 } from 'uuid';
 import 'reflect-metadata';
 export const app = express();
 loadConfig();
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
     res.locals.user = req.user;
     // fork orm.em for each request
     RequestContext.create(getEm(), next);
+    Object.assign(req, { apiRequestId: uuidv4() });
 });
 
 app.use('/api', getApiRouter());
