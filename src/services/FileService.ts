@@ -1,17 +1,16 @@
-import { Transform } from "stream";
-import logger from "../utils/logger";
-import { v4 as uuidv4 } from 'uuid';
-import { ServerError } from "../utils/errors";
-import { services } from "./Factory";
-import { File } from "../entity/File.entity";
-import { pipeline } from "stream/promises";
-import { getEm } from "./db";
-import { ApiRequest } from "../types/context";
-import { Express, Response } from "express";
 import { Bucket, Storage } from "@google-cloud/storage";
+import { Response } from "express";
 import { extension } from 'mime-types';
-import { AppIds, getAppName } from "../contants";
+import { Transform } from "stream";
+import { pipeline } from "stream/promises";
+import { v4 as uuidv4 } from 'uuid';
+import { getAppName } from "../contants";
+import { File } from "../entity/File.entity";
+import { ApiRequest } from "../types/context";
+import { ServerError } from "../utils/errors";
+import logger from "../utils/logger";
 import { getConfig } from "./ConfigService";
+import { getEm } from "./db";
 
 const MAX_SIZE = 1024 * 1024 * 3
 
@@ -29,12 +28,7 @@ export async function uploadFile(req: ApiRequest) {
 
     const appName = getAppName(appId);
     const fileKey = `${appName}.${uuidv4()}.${fileExt}`
-    let filePath = `${appName}/${fileKey}`;
-    if (appId === AppIds.PENCIL) {
-        filePath = fileKey;
-    }
-
-
+    const filePath = `${appName}/${fileKey}`;
     logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
     
     let size = 0;
@@ -87,18 +81,14 @@ export function getBucket(): Bucket {
             private_key: privateKey,
         },
     });
-    return storage.bucket(services().config.get().s3Bucket);
+    return storage.bucket(getConfig().s3Bucket);
 }
 
 
 export async function downloadFile(key: string, response: Response) {
     try {
         const [app] = key.split('.');
-        let path = key;
-        if (app !== 'pencil') {
-            path = `${app}/${key}`;
-        } 
-
+        const path = `${app}/${key}`;
         const file = getBucket().file(path);
         const [meta] = await file.getMetadata();
         const fromStream = await file.createReadStream(); 
