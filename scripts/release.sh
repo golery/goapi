@@ -6,3 +6,4 @@ docker push golery/goapi:$TAG
 echo
 echo Pushed image golery/goapi:$TAG
 echo Run this command in GCP: TAG=$TAG source /home/lyhoanghai/app-configs/scripts/run-goapi.sh
+echo RUN this command in GCP: docker logs --follow goapi
