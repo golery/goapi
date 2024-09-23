@@ -56,25 +56,31 @@ describe('router/authenticated', () => {
         it('#it.upload then download', async () => {
             const filePath = path.join(__dirname, '../testdata', 'sample.png');
             const buffer = fs.readFileSync(filePath);
-            const testUser = await setupUser();        
+            const testUser = await setupUser();
             const { key }: UploadFileResponse = await sendRequest(testUser, request(app)
                 .post(`/api/file`)
                 .set('Content-Type', 'image/png')
-                .send(buffer));            
+                .send(buffer));
             assert.isTrue(key.startsWith(`${getAppName(testUser.appId)}.`));;
-
-            const downnloadResponse: Buffer = (await request(app)
-                .get(`/api/public/file/${key}`).expect(200)).body;
-            assert.equal(downnloadResponse.length, buffer.length);
 
             const file = await (await getTestEm()).findOneOrFail(File, { key });
             assert.equal(file.userId, testUser.userId);
             assert.equal(file.appId, testUser.appId);
             assert.equal(file.size, buffer.length);
+
+            // first download from service
+            let downnloadResponse = (await request(app)
+                .get(`/api/public/file/${key}`).expect(200)).body;
+            assert.equal(downnloadResponse.length, buffer.length);
+
+            // download from cache
+            downnloadResponse = (await request(app)
+                .get(`/api/public/file/${key}`).expect(200)).body;
+            assert.equal(downnloadResponse.length, buffer.length);
         });
 
-        it('#it.download not found', async () => {                
+        it('#it.download not found', async () => {
             await request(app).get(`/api/public/file/invalid-key`).expect(404);
         });
-    }); 
+    });
 });

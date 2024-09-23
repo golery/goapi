@@ -11,6 +11,8 @@ import { ServerError } from "../utils/errors";
 import logger from "../utils/logger";
 import { getConfig } from "./ConfigService";
 import { getEm } from "./db";
+import mime from 'mime-types';
+import fs from 'fs';
 
 const MAX_SIZE = 1024 * 1024 * 3
 
@@ -30,15 +32,15 @@ export async function uploadFile(req: ApiRequest) {
     const fileKey = `${appName}.${uuidv4()}.${fileExt}`
     const filePath = `${appName}/${fileKey}`;
     logger.info(`Uploading file to Google Cloud Storage ${filePath}`)
-    
+
     let size = 0;
     // Create a Transform stream to intercept and count bytes
     const transform = new Transform({
         transform(chunk, encoding, callback) {
             size += chunk.length; // Increment byte count
             if (size > MAX_SIZE) {
-                callback(new ServerError(400, `File too large: ${size}`));                    
-            } else {               
+                callback(new ServerError(400, `File too large: ${size}`));
+            } else {
                 callback(null, chunk);
             }
         }
@@ -87,18 +89,28 @@ export function getBucket(): Bucket {
 
 export async function downloadFile(key: string, response: Response) {
     try {
-        const [app] = key.split('.');
-        const path = `${app}/${key}`;
-        const file = getBucket().file(path);
-        const [meta] = await file.getMetadata();
-        const fromStream = await file.createReadStream(); 
-        response.contentType(meta.contentType);
-        await pipeline(fromStream, response);
-        logger.info(`Downloaded file ${key} ${meta.contentType}`);
+        const cacheFilePath = `/tmp/${key}}`
+        if (!fs.existsSync(cacheFilePath)) {
+            const [app] = key.split('.');
+            const path = `${app}/${key}`;
+            const file = getBucket().file(path);
+            const [meta] = await file.getMetadata();
+            const fromStream = await file.createReadStream();
+            const fileStream = fs.createWriteStream(cacheFilePath);
+            await pipeline(fromStream, fileStream);
+            logger.info(`Cache miss. Fetched file from gcp ${key} ${meta.contentType}`);
+        }
+
+        const contentType = mime.contentType(key) || 'application/octet-stream';
+        response.contentType(contentType);                
+        const fileStream = fs.createReadStream(cacheFilePath);
+        await pipeline(fileStream, response);
+        logger.debug(`Downloaded file ${key}`, { key, contentType });
+        return;
     } catch (err) {
         if ((err as any).code === 404) {
             logger.error(`Failed to download file. File not found ${key}`, { key, err });
-            throw new ServerError(404, `Failed to download file. ${(err as any).errors?.[0]?.message}`);    
+            throw new ServerError(404, `Failed to download file. ${(err as any).errors?.[0]?.message}`);
         }
         logger.error('Failed to download file', { key, err });
         throw new ServerError(500, 'Failed to download file');
