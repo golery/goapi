@@ -77,8 +77,6 @@ describe('router/authenticated', () => {
             downnloadResponse = (await request(app)
                 .get(`/api/public/file/${key}`).expect(200)).body;
             assert.equal(downnloadResponse.length, buffer.length);
-
-            console.log('===> finish')
         });
 
         it('#it.download not found', async () => {

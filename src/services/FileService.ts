@@ -96,8 +96,7 @@ export async function downloadFile(key: string, response: Response) {
         if (fs.existsSync(cacheFilePath)) {            
             const fileStream = fs.createReadStream(cacheFilePath);
             await pipeline(fileStream, response);   
-            logger.info(`Cache miss. Fetched file from gcp ${key} ${contentType}`);         
-            console.log('====>');
+            logger.info(`Cache miss. Fetched file from gcp ${key} ${contentType}`);                     
             return;
         }
         const [app] = key.split('.');
