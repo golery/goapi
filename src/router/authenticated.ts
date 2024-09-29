@@ -7,6 +7,7 @@ import { uploadFile } from '../services/FileService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
+import { ServerError } from '../utils/errors';
 
 /**
  * List of API examples.
@@ -19,7 +20,8 @@ export const getAuthenticatedRouter = (): Router => {
     router.post(
         '/file',
         apiHandler(async (req) => {
-            return uploadFile(req);
+            const contentType = req.header('content-type');        
+            return uploadFile(req.ctx, contentType, req);
       }),
     );
 

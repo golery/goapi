@@ -1,3 +1,4 @@
+import { Ctx } from './../types/context.d';
 import { Bucket, Storage } from "@google-cloud/storage";
 import { Response } from "express";
 import { extension } from 'mime-types';
@@ -16,11 +17,9 @@ import fs from 'fs';
 
 const MAX_SIZE = 1024 * 1024 * 3
 
-export async function uploadFile(req: ApiRequest) {
+export async function uploadFile(ctx: Ctx, contentType: string | undefined, bodyStream: NodeJS.ReadableStream) {
     // express request is a nodejs ReadableStream (https://nodejs.org/api/stream.html#readable-streams)
     const startTime = Date.now()
-    const ctx = req.ctx;
-    const contentType = req.header('content-type');
     if (!contentType || !contentType?.startsWith('image')) {
         throw new ServerError(400, `Unsupported content type ${contentType}`);
     }
@@ -49,9 +48,8 @@ export async function uploadFile(req: ApiRequest) {
 
     const uploadStream = getGcpUploadStream(filePath);
     try {
-        await pipeline(req, transform, uploadStream);
-        const file = new File();
-        const ctx = req.ctx;
+        await pipeline(bodyStream, transform, uploadStream);
+        const file = new File();    
         file.appId = ctx.appId;
         file.userId = ctx.userId
         file.key = fileKey
@@ -99,6 +97,7 @@ export async function downloadFile(key: string, response: Response) {
             logger.info(`Cache miss. Fetched file from gcp ${key} ${contentType}`);                     
             return;
         }
+
         const [app] = key.split('.');
         const path = `${app}/${key}`;
         const gcpFile = getBucket().file(path);
