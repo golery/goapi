@@ -15,8 +15,13 @@ export const authMiddleware = (
 
     const groupId = parseIntOpt(req.header(GROUP_ID_HEADER));
 
-    if (authorizationHeader === `Bearer ${MOCK_TOKEN}`) {
-        const appId = parseIntOpt(req.header(APP_ID_HEADER));        
+    let appId = parseIntOpt(req.header(APP_ID_HEADER));        
+
+    if (authorizationHeader !== undefined && authorizationHeader.startsWith(`Bearer ${MOCK_TOKEN}`)) {
+        if (appId == undefined) {
+            const appIdTxt = authorizationHeader.substring(`Bearer ${MOCK_TOKEN},appId=`.length);
+            appId = parseIntOpt(appIdTxt);
+        }    
         Object.assign(req, { ctx: { userId: 1, appId, groupId, apiRequestId } });
         next();
         return;

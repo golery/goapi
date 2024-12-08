@@ -8,6 +8,7 @@ import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
 import { ServerError } from '../utils/errors';
+import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 
 /**
  * List of API examples.
@@ -110,6 +111,15 @@ export const getAuthenticatedRouter = (): Router => {
             );
         }),
     );
+
+    router.get('/kv', apiHandler(async (req) => {
+        const keys: string[] = Array.isArray(req.query.key) ? req.query.key : [req.query.key] as any;
+        return await getKeyValues(req.ctx, keys);
+    }));
+
+    router.put('/kv', apiHandler(async (req) => {
+        return await putKeyValues(req.ctx,req.body);
+    }));
 
     // ping and return current authenticated user
     router.get(

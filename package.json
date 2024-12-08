@@ -9,7 +9,7 @@
     "author": "Golery",
     "license": "Private",
     "scripts": {
-        "dev": "ts-node-dev --exit-child src/server.ts",
+        "dev": "ts-node-dev --inspect=5010 --exit-child src/server.ts",
         "dev-proddb": "NODE_ENV=production ts-node-dev --exit-child src/server.ts",
         "build": "tsc",
         "build:watch": "tsc --watch",

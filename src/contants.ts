@@ -4,6 +4,7 @@ export enum AppIds {
     PENCIL = 1,
     // Inventory app
     STOCKY = 2,
+    QUOTE=3,
     TEST = 999,
     TEST2 = 998,
 }
@@ -11,6 +12,7 @@ export enum AppIds {
 const AppIdToName: Record<AppIds, string> = {
     [AppIds.PENCIL]: 'pencil',
     [AppIds.STOCKY]: 'stocky',
+    [AppIds.QUOTE]: 'quote',
     [AppIds.TEST]: 'test',
     [AppIds.TEST2]: 'test2',
 }

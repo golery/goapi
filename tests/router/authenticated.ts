@@ -83,4 +83,51 @@ describe('router/authenticated', () => {
             await request(app).get(`/api/public/file/invalid-key`).expect(404);
         });
     });
+
+
+    describe('#kv', () => {
+        it('put then get', async () => {        
+            const testUser = await setupUser();        
+
+            // store key
+            const putResponse: any = await sendRequest(testUser, request(app)
+                .put('/api/kv')            
+                .send([{ key: 'key1', text: 'text1'}, { key: 'key2', text: 'text2'}]))
+
+            // load key
+            const getResponse: any = await sendRequest(testUser, request(app)
+                .get('/api/kv?key=key1&key=key2&key=key3')                      
+                .send())
+
+            const commonFields = {
+                appId: testUser.appId,
+                userId: testUser.userId
+            }
+            assert.deepEqual(_.sortBy(_.map(getResponse, r => _.omit(r, ['createdAt', 'updatedAt'])), 'key'), 
+                [{ ...commonFields, key: 'key1', text: 'text1' }, { ...commonFields, key: 'key2', text: 'text2' }],            
+            )
+        });
+
+        it('upserts key value', async () => {        
+            const testUser = await setupUser();        
+
+            // store key
+            const putResponse1: any = await sendRequest(testUser, request(app)
+                .put('/api/kv')            
+                .send([{ key: 'key1', text: 'text1'}]))
+
+            // store the same key
+            const putResponse2: any = await sendRequest(testUser, request(app)
+            .put('/api/kv')            
+            .send([{ key: 'key1', text: 'text2'}]))
+
+            // load key again
+            const getResponse: any = await sendRequest(testUser, request(app)
+                .get('/api/kv?key=key1')                      
+                .send())
+
+            assert.equal(getResponse.length, 1);
+            assert.equal(getResponse[0].text, 'text2');
+        });
+    });
 });

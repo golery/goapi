@@ -6,6 +6,7 @@ import { getEm, orm } from './db';
 import * as _ from 'lodash';
 import logger from '../utils/logger';
 import { ServerError } from '../utils/errors';
+import * as uuid from 'uuid';
 
 async function deleteRecords(ctx: Ctx) {
     const em = getEm();
@@ -55,7 +56,7 @@ async function upsertRecords(
             const record = new DataRecord();
             logger.info('MAP' + JSON.stringify(item));
             Object.assign(record, {
-                id: item.id,
+                id: item.id ?? uuid.v4(),
                 data: item,
                 userId: ctx.userId,
                 appId: ctx.appId,

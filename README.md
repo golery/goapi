@@ -16,7 +16,7 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 # DEV
 ## Cheatsheet
 - npm run dev
-- npm run test:grep isValidEmail
+- npm run test:grep "isValidEmail somthing"
 - npm run build:watch # quickly check syntax
 - npm run test # run all test
 - ./scripts/deploy-sandbox.sh # deploy to koeyb as sandbox env
