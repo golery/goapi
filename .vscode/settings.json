@@ -30,5 +30,25 @@
   "appService.deploySubpath": "",
   "javascript.preferences.importModuleSpecifier": "relative",
   "typescript.preferences.importModuleSpecifier": "relative",
-  "files.autoSave": "off"
+  "files.autoSave": "off",
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#5ccef3",
+    "activityBar.background": "#5ccef3",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#ed12b8",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#15202b99",
+    "sash.hoverBorder": "#5ccef3",
+    "statusBar.background": "#2dc0ef",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#10a8d8",
+    "statusBarItem.remoteBackground": "#2dc0ef",
+    "statusBarItem.remoteForeground": "#15202b",
+    "titleBar.activeBackground": "#2dc0ef",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#2dc0ef99",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#2dc0ef"
 }

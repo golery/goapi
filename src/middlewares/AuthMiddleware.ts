@@ -14,7 +14,7 @@ export const authMiddleware = (
     const authorizationHeader = req.header('Authorization');
 
     const groupId = parseIntOpt(req.header(GROUP_ID_HEADER));
-
+    
     let appId = parseIntOpt(req.header(APP_ID_HEADER));        
 
     if (authorizationHeader !== undefined && authorizationHeader.startsWith(`Bearer ${MOCK_TOKEN}`)) {

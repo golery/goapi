@@ -4,11 +4,10 @@ import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { createGroup, getUserInfo } from '../services/AccountService';
 import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
+import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
-import { ServerError } from '../utils/errors';
-import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 
 /**
  * List of API examples.
