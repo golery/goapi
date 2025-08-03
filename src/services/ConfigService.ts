@@ -20,7 +20,7 @@ export function loadConfig(): Config {
     const isProd = () => process.env.NODE_ENV === 'production';
 
     // On prod/env.sh is ONLY used at local to hook to prod DB. On real prod, we use environment variable in Koeyb
-    const dotEnvPath = `/work/app-configs/goapi/${isProd() ? 'prod' : 'dev'}/env.sh`;
+    const dotEnvPath = `/workspaces/app-configs/goapi/${isProd() ? 'prod' : 'dev'}/env.sh`;
     if (fs.existsSync(dotEnvPath)) {
         logger.info(`Load config from ${dotEnvPath}`);
         const result = dotenv.config({ path: dotEnvPath });

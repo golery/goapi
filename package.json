@@ -57,7 +57,7 @@
         "zod": "3.23.8"
     },
     "devDependencies": {
-        "@mikro-orm/cli": "^6.3.6",
+        "@mikro-orm/cli": "6.3.6",
         "@types/async": "3.2.5",
         "@types/bcrypt": "5.0.2",
         "@types/bluebird": "3.5.33",

@@ -8,7 +8,7 @@ const options: winston.LoggerOptions = {
                 winston.format.colorize(),            
                 winston.format.printf((info) => {
                     const { ctx, level, message, ...rest } = info
-                    const logCtx = { ...rest, ...ctx }
+                    const logCtx = { ...rest, ...(ctx as any) }
                     return `${info.level} ${info.message} : ${JSON.stringify(logCtx)}`;
                   })               
             ),
