@@ -27,6 +27,10 @@ export function loadConfig(): Config {
         if (result.error) {
             logger.error(`Fail to load config from file ${dotEnvPath}`);
         }
+    } else {
+        if (isDev()) {
+            throw new Error(`Config file ${dotEnvPath} not found`);
+        }
     }
 
     const config: Config = {

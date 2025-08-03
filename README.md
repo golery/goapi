@@ -10,7 +10,7 @@ Deployed to https://app.koyeb.com
 Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker configuration
 
 # CONFIGURATION / SECRET
-- Dev: ConfigService loads configs and secrets from /data/app-configs/goapi2/dev/config.yml'
+- Dev: ConfigService loads configs and secrets from /workspaces/app-configs/goapi2/dev/config.yml'
 - Prod: they are loaded from docker environment variables/
 
 # DEV
