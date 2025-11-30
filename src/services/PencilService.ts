@@ -282,37 +282,47 @@ export class PencilService {
 
     async updateNode(node: UpdateNodeRequest): Promise<Node> {
         console.log(`Start upload node ${node.id}`);
-        const existing = await nodeRepo.findOneOrFail({
-            where: { id: node.id },
-        });
         
-        // Extract tags from the request
+        // Extract tags from the request before deleting from node object
         const tags = (node as any).tags;
         
-        // Handle tags update if provided
-        if (tags !== undefined) {
-            const em = getEm();
-            // Delete all existing tags for this node
-            await em.nativeDelete(NodeTag, { nodeId: node.id });
+        // Wrap all operations in a transaction to ensure atomicity
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionNodeRepo = entityManager.getRepository(Node);
+            const existing = await transactionNodeRepo.findOneOrFail({
+                where: { id: node.id },
+            });
             
-            // Insert new tags if any
-            if (tags && Array.isArray(tags) && tags.length > 0) {
-                const nodeTags = tags.map((tag: string) => {
-                    const nodeTag = new NodeTag();
-                    Object.assign(nodeTag, { nodeId: node.id, tag: tag });
-                    return nodeTag;
-                });
-                await em.persistAndFlush(nodeTags);
+            // Handle tags update if provided
+            if (tags !== undefined) {
+                // Delete all existing tags for this node using raw SQL within transaction
+                await entityManager.query(
+                    'DELETE FROM node_tag WHERE node_id = $1',
+                    [node.id]
+                );
+                
+                // Insert new tags if any using raw SQL within transaction
+                if (tags && Array.isArray(tags) && tags.length > 0) {
+                    const values = tags.map((tag: string, index: number) => 
+                        `($${index * 2 + 1}, $${index * 2 + 2})`
+                    ).join(', ');
+                    const params = tags.flatMap((tag: string) => [node.id, tag]);
+                    await entityManager.query(
+                        `INSERT INTO node_tag (node_id, tag) VALUES ${values}`,
+                        params
+                    );
+                }
             }
-        }
-        
-        delete (node as any).userId;
-        delete (node as any).app;
-        delete (node as any).createTime;
-        delete (node as any).updateTime;
-        delete (node as any).tags;
-        
-        return await nodeRepo.save({ ...existing, ...node });
+            
+            // Clean up node object before saving
+            delete (node as any).userId;
+            delete (node as any).app;
+            delete (node as any).createTime;
+            delete (node as any).updateTime;
+            delete (node as any).tags;
+            
+            return await transactionNodeRepo.save({ ...existing, ...node });
+        });
     }
 
     async findNodesByTags(tags: string[]): Promise<Node[]> {
