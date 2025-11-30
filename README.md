@@ -25,6 +25,10 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 - Deb DB in supabase. Credentials are provided from /workspaces/app-configs/goapi/dev/env.sh
 - There is no migration script. Run manually scripts in migratioins folder.
 
+# TEST
+- E2e : tests/e2e/e2e-xyz.ts
+- Run: npm run test:file tests/e2e/e2e-node.ts
+
 
 ## Expose to Mobile on Windows machine
 Access: http://localhost:8200
