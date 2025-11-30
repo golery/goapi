@@ -36,6 +36,37 @@ export const getAuthenticatedRouter = (): Router => {
     );
 
     router.get(
+        '/pencil/node',
+        apiHandler(async (req, res) => {
+            const tagsParam = req.query.tags;
+            if (!tagsParam) {
+                return res.status(400).json({ error: 'tags query parameter is required' });
+            }
+            const tags = Array.isArray(tagsParam)
+                ? tagsParam.map(t => String(t))
+                : String(tagsParam).split(',').map(t => t.trim()).filter(t => t);
+            const nodes = await services().pencilService.findNodesByTags(tags);
+            res.json(nodes);
+        }),
+    );
+
+    router.get(
+        '/pencil/tags',
+        apiHandler(async (req, res) => {
+            const tags = await services().pencilService.getAllTags();
+            res.json(tags);
+        }),
+    );
+
+    router.get(
+        '/pencil/tags/count',
+        apiHandler(async (req, res) => {
+            const counts = await services().pencilService.getTagCounts();
+            res.json(counts);
+        }),
+    );
+
+    router.get(
         '/pencil/book',
         apiHandler(async (req, res) => {
             const books = await services().pencilService.getBooks();

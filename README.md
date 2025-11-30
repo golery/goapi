@@ -21,6 +21,9 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 - npm run test # run all test
 - ./scripts/deploy-sandbox.sh # deploy to koeyb as sandbox env
 
+# DEV Database
+- Deb DB in supabase. Credentials are provided from /workspaces/app-configs/goapi/dev/env.sh
+- There is no migration script. Run manually scripts in migratioins folder.
 
 
 ## Expose to Mobile on Windows machine

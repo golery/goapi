@@ -1,7 +1,8 @@
 import { Node } from '../entity/Node';
 import { BadRequestError } from '../utils/exceptions';
-import { dataSource, bookRepo, nodeRepo } from './db';
-import { Repository } from 'typeorm';
+import { dataSource, bookRepo, nodeRepo, getEm, orm } from './db';
+import { Repository, In } from 'typeorm';
+import { NodeTag } from '../entity/NodeTag.entity';
 
 const APP_PENCIL = 1;
 
@@ -9,6 +10,10 @@ export interface CreateSpaceRequest {
     userId: string;
     name: string;
     code: string;
+}
+
+export interface UpdateNodeRequest extends Node {
+    tags?: string[];
 }
 
 const USER_ID = '1';
@@ -275,15 +280,97 @@ export class PencilService {
         return node;
     }
 
-    async updateNode(node: Node): Promise<Node> {
+    async updateNode(node: UpdateNodeRequest): Promise<Node> {
         console.log(`Start upload node ${node.id}`);
         const existing = await nodeRepo.findOneOrFail({
             where: { id: node.id },
         });
+        
+        // Extract tags from the request
+        const tags = (node as any).tags;
+        
+        // Handle tags update if provided
+        if (tags !== undefined) {
+            const em = getEm();
+            // Delete all existing tags for this node
+            await em.nativeDelete(NodeTag, { nodeId: node.id });
+            
+            // Insert new tags if any
+            if (tags && Array.isArray(tags) && tags.length > 0) {
+                const nodeTags = tags.map((tag: string) => {
+                    const nodeTag = new NodeTag();
+                    Object.assign(nodeTag, { nodeId: node.id, tag: tag });
+                    return nodeTag;
+                });
+                await em.persistAndFlush(nodeTags);
+            }
+        }
+        
         delete (node as any).userId;
         delete (node as any).app;
         delete (node as any).createTime;
         delete (node as any).updateTime;
+        delete (node as any).tags;
+        
         return await nodeRepo.save({ ...existing, ...node });
+    }
+
+    async findNodesByTags(tags: string[]): Promise<Node[]> {
+        if (!tags || tags.length === 0) {
+            return [];
+        }
+        
+        // For AND query: find nodes that have ALL of the given tags
+        // We'll group by nodeId and count distinct tags per node
+        // A node must have all tags, so count should equal tags.length
+        
+        const tagPlaceholders = tags.map((_, i) => `$${i + 1}`).join(',');
+        const query = `
+            SELECT node_id
+            FROM node_tag
+            WHERE tag IN (${tagPlaceholders})
+            GROUP BY node_id
+            HAVING COUNT(DISTINCT tag) = $${tags.length + 1}
+        `;
+        
+        const result = await dataSource.query(query, [...tags, tags.length]);
+        const nodeIds = result.map((row: any) => {
+            // Handle both snake_case and camelCase column names
+            const nodeId = row.node_id ?? row.nodeId;
+            return parseInt(String(nodeId));
+        }).filter((id: number) => !isNaN(id));
+        
+        if (nodeIds.length === 0) {
+            return [];
+        }
+        
+        return await nodeRepo.find({
+            where: { id: In(nodeIds) },
+        });
+    }
+
+    async getAllTags(): Promise<string[]> {
+        const query = `SELECT DISTINCT tag FROM node_tag ORDER BY tag`;
+        const result = await dataSource.query(query);
+        return result.map((row: any) => String(row.tag ?? row.TAG ?? '')).filter((tag: string) => tag.length > 0);
+    }
+
+    async getTagCounts(): Promise<Record<string, number>> {
+        const query = `
+            SELECT tag, COUNT(DISTINCT node_id) as count
+            FROM node_tag
+            GROUP BY tag
+            ORDER BY tag
+        `;
+        const result = await dataSource.query(query);
+        const counts: Record<string, number> = {};
+        result.forEach((row: any) => {
+            const tag = String(row.tag ?? row.TAG ?? '');
+            const count = parseInt(String(row.count ?? row.COUNT ?? '0'));
+            if (tag && !isNaN(count)) {
+                counts[tag] = count;
+            }
+        });
+        return counts;
     }
 }
