@@ -9,7 +9,7 @@ RUN npm ci
 
 COPY *.* ./
 COPY src src
-RUN ls sr*
+RUN ls src
 
 # Disable below during development of docker
 # The compile can be done by npm run watch-ts
