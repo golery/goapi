@@ -55,6 +55,7 @@ Copy all environment variables in /work/app-configs/goapi2/prod/env.sh to docker
 # TEST
 - E2e : tests/e2e/e2e-xyz.ts
 - Run: npm run test:file tests/e2e/e2e-node.ts
+- In Cursor IDE, use test-explorer (it support debugger)
 
 
 ## Expose to Mobile on Windows machine
