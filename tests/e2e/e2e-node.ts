@@ -10,6 +10,7 @@ const BASE_URL = 'http://localhost:8200';
 describe('e2e node', function () {
     let authToken: string;
     let createdNodeId: number;
+    let createdBookId: number;
     let apiClient: AxiosInstance;
 
     before(async () => {
@@ -18,6 +19,18 @@ describe('e2e node', function () {
             baseURL: BASE_URL,
             validateStatus: () => true, // Don't throw on any status code
         });
+    });
+
+    after(async () => {
+        if (authToken && createdBookId) {
+            const deleteResponse = await apiClient.delete(`/api/pencil/book/${createdBookId}`, {
+                headers: {
+                    Authorization: `Bearer ${authToken}`,
+                    appId: `${AppIds.TEST}`,
+                },
+            });
+            console.log(`Deleted test book ${createdBookId}, status: ${deleteResponse.status}`);
+        }
     });
 
     it('should create a new node and update it with tags', async () => {
@@ -56,6 +69,9 @@ describe('e2e node', function () {
         assert.isObject(createBookResponse.data.node);
         assert.isNumber(createBookResponse.data.node.id);
         createdNodeId = createBookResponse.data.node.id;
+        assert.isObject(createBookResponse.data.book);
+        assert.isNumber(createBookResponse.data.book.id);
+        createdBookId = createBookResponse.data.book.id;
 
         // Step 3: Update the node with tags
         const tags = ['tag1', 'tag2', 'tag3'];

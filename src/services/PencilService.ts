@@ -1,4 +1,5 @@
 import { Node } from '../entity/Node';
+import { Book } from '../entity/Book';
 import { BadRequestError } from '../utils/exceptions';
 import { dataSource, bookRepo, nodeRepo, getEm, orm } from './db';
 import { Repository, In } from 'typeorm';
@@ -249,6 +250,28 @@ export class PencilService {
         return { book, node };
     }
 
+    async deleteBook(bookId: number) {
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionNodeRepo = entityManager.getRepository(Node);
+            const transactionBookRepo = entityManager.getRepository(Book);
+            
+            // Delete all tags for all nodes in this book
+            // The column name is 'space' in the database (mapped to bookId in Node entity)
+            await entityManager.query(
+                'DELETE FROM node_tag WHERE node_id IN (SELECT id FROM node WHERE space = $1)',
+                [bookId]
+            );
+
+            // Delete all nodes in this book
+            await transactionNodeRepo.delete({ bookId });
+
+            // Delete the book itself
+            await transactionBookRepo.delete(bookId);
+            
+            return { success: true };
+        });
+    }
+
     async addNode(parentId: number, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
         console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({
@@ -391,30 +414,39 @@ export class PencilService {
         return counts;
     }
 
-    async getNodeWithDescendants(nodeIdOrIds: number | number[]): Promise<Node[]> {
+    async getNodeWithDescendants(nodeIdOrIds: number | number[], limit?: number): Promise<Node[]> {
         const result: Map<number, Node> = new Map();
-        const ids = Array.isArray(nodeIdOrIds) ? nodeIdOrIds : [nodeIdOrIds];
-        
-        const collectNodeAndDescendants = async (id: number): Promise<void> => {
-            if (result.has(id)) {
-                return;
+        const queue = Array.isArray(nodeIdOrIds) ? [...nodeIdOrIds] : [nodeIdOrIds];
+        const visited = new Set<number>();
+
+        while (queue.length > 0) {
+            if (limit && result.size >= limit) {
+                break;
             }
 
-            const node = await nodeRepo.findOne({ where: { id } });
-            if (!node) {
-                return;
+            const currentBatch = queue.splice(0, limit ? limit - result.size : queue.length);
+            const nodes = await nodeRepo.find({
+                where: { id: In(currentBatch.filter(id => !visited.has(id))) }
+            });
+
+            for (const node of nodes) {
+                if (result.size >= (limit || Infinity)) break;
+                if (!visited.has(node.id)) {
+                    visited.add(node.id);
+                    result.set(node.id, node);
+                    if (node.children && node.children.length > 0) {
+                        queue.push(...node.children);
+                    }
+                }
             }
             
-            result.set(id, node);
-            
-            if (node.children && node.children.length > 0) {
-                await Promise.all(
-                    node.children.map((childId) => collectNodeAndDescendants(childId))
-                );
+            // To prevent infinite loop if some IDs in currentBatch were already visited or not found
+            if (nodes.length === 0 && queue.length > 0) {
+               // Mark all as visited to avoid re-processing
+               currentBatch.forEach(id => visited.add(id));
             }
-        };
+        }
         
-        await Promise.all(ids.map(id => collectNodeAndDescendants(id)));
         return Array.from(result.values());
     }
 }

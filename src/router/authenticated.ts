@@ -83,6 +83,15 @@ export const getAuthenticatedRouter = (): Router => {
             res.json(books);
         }),
     );
+    router.delete(
+        '/pencil/book/:bookId',
+        apiHandler(async (req, res) => {
+            const result = await services().pencilService.deleteBook(
+                parseInt(req.params.bookId),
+            );
+            res.json(result);
+        }),
+    );
 
     router.post(
         '/pencil/move/:nodeId',
@@ -183,7 +192,7 @@ export const getAuthenticatedRouter = (): Router => {
                 // Get nodes and descendants if nodeTree is provided
                 let nodes: Node[] = [];
                 if (nodeTree && nodeTree.length > 0) {
-                    nodes = await services().pencilService.getNodeWithDescendants(nodeTree);
+                    nodes = await services().pencilService.getNodeWithDescendants(nodeTree, 20);
                     if (nodes.length === 0) {
                         return res.status(404).json({ error: 'Nodes not found' });
                     }

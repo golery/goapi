@@ -22,7 +22,7 @@ All requests must include the following headers:
 ```typescript
 {
   "question": string,           // Required: The user's prompt
-  "nodeTree"?: Array<number>,   // Optional: List of node IDs. All descendants included.
+  "nodeTree"?: Array<number>,   // Optional: List of node IDs. All descendants included (Max 20 nodes total).
   "chatHistory"?: Array<{       // Optional: Previous messages for context
     "role": "user" | "assistant",
     "content": string

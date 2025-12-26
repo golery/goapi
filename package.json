@@ -20,6 +20,7 @@
         "test:grep": "ts-mocha tests/**/*.ts --grep",
         "test:debug": "mocha --require ts-node/register/transpile-only --inspect-brk=5000 tests/**/*.ts --grep",
         "fmt": "prettier --write src/**/*.ts test/**/*.ts",
+        "cleanup:test-books": "ts-mocha tests/scripts/cleanup-test-books.test.ts",
         "start": "node --trace-deprecation dist/server.js"
     },
     "dependencies": {
@@ -109,6 +110,6 @@
         "ts-mocha": "10.0.0",
         "ts-node": "10.9.2",
         "ts-node-dev": "2.0.0",
-        "typescript": "5.5.4"   
+        "typescript": "5.5.4"
     }
 }
