@@ -51,3 +51,15 @@ export interface CreateGroupResponse {
 export interface UploadFileResponse {
     key: string,
 }
+
+export const ChatMessageSchema = z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string(),
+});
+
+export const ChatRequestSchema = z.object({
+    question: z.string().min(1),
+    chatHistory: z.array(ChatMessageSchema).optional(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;

@@ -8,6 +8,8 @@ import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
+import { ChatRequestSchema } from '../types/schemas';
+import { BadRequestError } from '../utils/exceptions';
 
 /**
  * List of API examples.
@@ -170,6 +172,82 @@ export const getAuthenticatedRouter = (): Router => {
     router.get('/user', apiHandler(async (req) => {
         return await getUserInfo(req.ctx);
     }));
+
+    router.post(
+        '/pencil/node/:nodeId/chat',
+        async (req, res, next) => {
+            try {
+                const nodeId = parseInt(req.params.nodeId);
+                if (isNaN(nodeId)) {
+                    return res.status(400).json({ error: 'Invalid nodeId' });
+                }
+
+                // Validate request body
+                const { question, chatHistory } = ChatRequestSchema.parse(req.body);
+
+                // Get node and descendants
+                const nodes = await services().pencilService.getNodeWithDescendants(nodeId);
+                if (nodes.length === 0) {
+                    return res.status(404).json({ error: 'Node not found' });
+                }
+
+                // Check if chat service is configured
+                if (!process.env.GEMINI_API_KEY) {
+                    return res.status(503).json({ error: 'Chat service not configured. GEMINI_API_KEY is required.' });
+                }
+
+                // Set up SSE headers
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+
+                // Stream response from ChatService
+                const stream = services().chatService.streamChatResponse(
+                    question,
+                    nodes,
+                    chatHistory,
+                );
+
+                // Handle client disconnect
+                req.on('close', () => {
+                    logger.info('Client disconnected from chat stream');
+                });
+
+                // Stream chunks
+                for await (const chunk of stream) {
+                    res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+                }
+
+                // Send completion message
+                res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+                res.end();
+            } catch (error: any) {
+                logger.error('Error in chat endpoint', { error: error.message, stack: error.stack });
+                
+                if (error.name === 'ZodError') {
+                    return res.status(400).json({ error: 'Invalid request body', details: error.errors });
+                }
+                
+                if (error instanceof BadRequestError) {
+                    return res.status(400).json({ error: error.message });
+                }
+
+                // Check if it's an API key error
+                if (error.message && error.message.includes('Gemini API key')) {
+                    return res.status(503).json({ error: 'Chat service not configured. GEMINI_API_KEY is required.' });
+                }
+
+                // For SSE, we need to send error as an event
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Internal server error' });
+                } else {
+                    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+                    res.end();
+                }
+            }
+        },
+    );
 
     return router;
 };

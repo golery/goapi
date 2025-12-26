@@ -390,4 +390,26 @@ export class PencilService {
         });
         return counts;
     }
+
+    async getNodeWithDescendants(nodeId: number): Promise<Node[]> {
+        const result: Node[] = [];
+        
+        const collectNodeAndDescendants = async (id: number): Promise<void> => {
+            const node = await nodeRepo.findOne({ where: { id } });
+            if (!node) {
+                return;
+            }
+            
+            result.push(node);
+            
+            if (node.children && node.children.length > 0) {
+                await Promise.all(
+                    node.children.map((childId) => collectNodeAndDescendants(childId))
+                );
+            }
+        };
+        
+        await collectNodeAndDescendants(nodeId);
+        return result;
+    }
 }
