@@ -12,7 +12,7 @@ export interface CreateSpaceRequest {
     code: string;
 }
 
-export interface UpdateNodeRequest extends Node {
+export interface UpdateNodeRequest extends Omit<Node, 'data'> {
     tags?: string[];
     data?: Record<string, any> | null;
 }

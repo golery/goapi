@@ -3,6 +3,7 @@ import { describe } from 'mocha';
 import axios, { AxiosInstance } from 'axios';
 import * as uuid from 'uuid';
 import { AppIds } from '../../src/contants';
+import { MOCK_TOKEN } from '../../src/services/AccountService';
 
 const BASE_URL = 'http://localhost:8200';
 
@@ -91,6 +92,85 @@ describe('e2e node', function () {
         assert.isArray(nodesWithTagsResponse.data);
         const foundNode = nodesWithTagsResponse.data.find((node: any) => node.id === createdNodeId);
         assert.isObject(foundNode, 'Node should be found when querying by tags');
+        // Output bookId and nodeId
+        // It's not clear which variable is "bookId" exactly from context, but assuming it's the createdNodeId.
+        // If createBookResponse.data.node contains something called bookId, output it as well.
+        // We'll output both for clarity.
+        // For test logging, use console.log.
+        console.log('Created Book:', createBookResponse.data.node);
+        console.log('createdNodeId:', createdNodeId);
+    });
+
+    it('should create a node with image links and update them', async () => {
+        const appId = AppIds.TEST;
+        const testAuthToken = MOCK_TOKEN;
+        const rootNodeId = 3205; // Hardcoded parent node id
+
+        // Step 1: Add a child node with image links
+        const initialImages = [
+            { url: 'file-key-1' },
+            { url: 'file-key-2' },
+            { url: 'file-key-3' },
+        ];
+        
+        const addNodeResponse = await apiClient.post(
+            `/api/pencil/add/${rootNodeId}`,
+            {
+                position: 0,
+                data: {
+                    images: initialImages,
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${testAuthToken}`,
+                    appId: `${appId}`,
+                },
+            }
+        );
+
+        assert.equal(addNodeResponse.status, 200, `Expected status 200, got ${addNodeResponse.status}`);
+        assert.isObject(addNodeResponse.data);
+        assert.isNumber(addNodeResponse.data.id);
+        const childNodeId = addNodeResponse.data.id;
+        
+        // Verify images were stored
+        assert.isObject(addNodeResponse.data.data);
+        assert.isArray(addNodeResponse.data.data.images);
+        assert.equal(addNodeResponse.data.data.images.length, 3);
+        assert.deepEqual(addNodeResponse.data.data.images, initialImages);
+
+        // Step 2: Update the node with different image links
+        const updatedImages = [
+            { url: 'file-key-4' },
+            { url: 'file-key-5' },
+        ];
+        
+        const updateNodeResponse = await apiClient.post(
+            '/api/pencil/update',
+            {
+                id: childNodeId,
+                data: {
+                    images: updatedImages,
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${testAuthToken}`,
+                    appId: `${appId}`,
+                },
+            }
+        );
+
+        assert.equal(updateNodeResponse.status, 200, `Expected status 200, got ${updateNodeResponse.status}`);
+        assert.isObject(updateNodeResponse.data);
+        assert.equal(updateNodeResponse.data.id, childNodeId);
+        
+        // Verify images were updated
+        assert.isObject(updateNodeResponse.data.data);
+        assert.isArray(updateNodeResponse.data.data.images);
+        assert.equal(updateNodeResponse.data.data.images.length, 2);
+        assert.deepEqual(updateNodeResponse.data.data.images, updatedImages);
     });
 });
 
