@@ -391,16 +391,21 @@ export class PencilService {
         return counts;
     }
 
-    async getNodeWithDescendants(nodeId: number): Promise<Node[]> {
-        const result: Node[] = [];
+    async getNodeWithDescendants(nodeIdOrIds: number | number[]): Promise<Node[]> {
+        const result: Map<number, Node> = new Map();
+        const ids = Array.isArray(nodeIdOrIds) ? nodeIdOrIds : [nodeIdOrIds];
         
         const collectNodeAndDescendants = async (id: number): Promise<void> => {
+            if (result.has(id)) {
+                return;
+            }
+
             const node = await nodeRepo.findOne({ where: { id } });
             if (!node) {
                 return;
             }
             
-            result.push(node);
+            result.set(id, node);
             
             if (node.children && node.children.length > 0) {
                 await Promise.all(
@@ -409,7 +414,7 @@ export class PencilService {
             }
         };
         
-        await collectNodeAndDescendants(nodeId);
-        return result;
+        await Promise.all(ids.map(id => collectNodeAndDescendants(id)));
+        return Array.from(result.values());
     }
 }

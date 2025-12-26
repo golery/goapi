@@ -247,9 +247,10 @@ describe('e2e node', function () {
 
         try {
             const chatResponse = await apiClient.post(
-                `/api/pencil/node/${nodeId}/chat`,
+                `/api/pencil/chat`,
                 {
                     question: firstQuestion,
+                    nodeTree: [nodeId],
                 },
                 {
                     headers: {
@@ -349,10 +350,11 @@ describe('e2e node', function () {
 
         try {
             const followUpChatResponse = await apiClient.post(
-                `/api/pencil/node/${nodeId}/chat`,
+                `/api/pencil/chat`,
                 {
                     question: followUpQuestion,
                     chatHistory: chatHistory,
+                    nodeTree: [nodeId],
                 },
                 {
                     headers: {

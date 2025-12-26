@@ -174,21 +174,19 @@ export const getAuthenticatedRouter = (): Router => {
     }));
 
     router.post(
-        '/pencil/node/:nodeId/chat',
+        '/pencil/chat',
         async (req, res, next) => {
             try {
-                const nodeId = parseInt(req.params.nodeId);
-                if (isNaN(nodeId)) {
-                    return res.status(400).json({ error: 'Invalid nodeId' });
-                }
-
                 // Validate request body
-                const { question, chatHistory } = ChatRequestSchema.parse(req.body);
+                const { question, chatHistory, nodeTree } = ChatRequestSchema.parse(req.body);
 
-                // Get node and descendants
-                const nodes = await services().pencilService.getNodeWithDescendants(nodeId);
-                if (nodes.length === 0) {
-                    return res.status(404).json({ error: 'Node not found' });
+                // Get nodes and descendants if nodeTree is provided
+                let nodes: Node[] = [];
+                if (nodeTree && nodeTree.length > 0) {
+                    nodes = await services().pencilService.getNodeWithDescendants(nodeTree);
+                    if (nodes.length === 0) {
+                        return res.status(404).json({ error: 'Nodes not found' });
+                    }
                 }
 
                 // Check if chat service is configured
@@ -206,7 +204,7 @@ export const getAuthenticatedRouter = (): Router => {
                 const stream = services().chatService.streamChatResponse(
                     question,
                     nodes,
-                    chatHistory,
+                    chatHistory || [],
                 );
 
                 // Handle client disconnect

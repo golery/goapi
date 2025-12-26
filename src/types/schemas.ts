@@ -60,6 +60,7 @@ export const ChatMessageSchema = z.object({
 export const ChatRequestSchema = z.object({
     question: z.string().min(1),
     chatHistory: z.array(ChatMessageSchema).optional(),
+    nodeTree: z.array(z.number()).optional(),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
