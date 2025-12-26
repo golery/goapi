@@ -1,23 +1,26 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { Node } from '../entity/Node';
 import { ChatMessage } from '../types/schemas';
 import logger from '../utils/logger';
 
 export class ChatService {
-    private genAI: GoogleGenerativeAI | null = null;
+    private openai: OpenAI | null = null;
 
-    private getGenAI(): GoogleGenerativeAI {
+    private getOpenAI(): OpenAI {
         // Lazy initialization to ensure env vars are loaded from .env file
-        if (!this.genAI) {
-            const apiKey = process.env.GEMINI_API_KEY;
+        if (!this.openai) {
+            const apiKey = process.env.GROQ_API_KEY;
             if (apiKey) {
-                this.genAI = new GoogleGenerativeAI(apiKey);
+                this.openai = new OpenAI({
+                    apiKey,
+                    baseURL: 'https://api.groq.com/openai/v1',
+                });
             } else {
-                logger.warn('GEMINI_API_KEY not set. Chat functionality will not work.');
-                throw new Error('Gemini API key not configured');
+                logger.warn('GROQ_API_KEY not set. Chat functionality will not work.');
+                throw new Error('Groq API key not configured');
             }
         }
-        return this.genAI;
+        return this.openai;
     }
 
     private formatNodeContent(nodes: Node[]): string {
@@ -50,49 +53,55 @@ export class ChatService {
         nodes: Node[],
         chatHistory?: ChatMessage[],
     ): AsyncGenerator<string> {
-        const genAI = this.getGenAI();
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+        const openai = this.getOpenAI();
+        const llmModel = 'llama-3.3-70b-versatile';
 
         // Format node content
         const nodeContent = this.formatNodeContent(nodes);
 
-        // Build conversation history
-        const history: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+        // Build messages
+        const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
         // Add system context with node content
-        const systemMessage = `You are helping the user understand the following node content:\n\n${nodeContent}\n\nPlease answer questions about this content clearly and concisely.`;
+        messages.push({
+            role: 'system',
+            content: `You are helping the user understand the following node content:\n\n${nodeContent}\n\nPlease answer questions about this content clearly and concisely.`,
+        });
 
         // Add chat history if provided
         if (chatHistory && chatHistory.length > 0) {
             for (const msg of chatHistory) {
-                if (msg.role === 'user') {
-                    history.push({ role: 'user', parts: [{ text: msg.content }] });
-                } else if (msg.role === 'assistant') {
-                    history.push({ role: 'model', parts: [{ text: msg.content }] });
-                }
+                messages.push({
+                    role: msg.role === 'assistant' ? 'assistant' : 'user',
+                    content: msg.content,
+                });
             }
         }
 
-        // Start chat with history (without systemInstruction - include it in the first message instead)
-        const chat = model.startChat({
-            history: history.length > 0 ? history : undefined,
+        // Add current question
+        messages.push({
+            role: 'user',
+            content: question,
         });
 
-        // For the first message in a conversation, include the system context
-        // For follow-up questions, the context should already be in the conversation
-        const fullQuestion = history.length === 0 
-            ? `${systemMessage}\n\nUser question: ${question}`
-            : question;
-
         // Send the question and stream the response
-        const result = await chat.sendMessageStream(fullQuestion);
+        try {
+            const stream = await openai.chat.completions.create({
+                model: llmModel,
+                messages: messages,
+                stream: true,
+            });
 
-        // Stream chunks
-        for await (const chunk of result.stream) {
-            const chunkText = chunk.text();
-            if (chunkText) {
-                yield chunkText;
+            // Stream chunks
+            for await (const chunk of stream) {
+                const chunkText = chunk.choices[0]?.delta?.content || '';
+                if (chunkText) {
+                    yield chunkText;
+                }
             }
+        } catch (error: any) {
+            logger.error('Error in Groq chat completion:', error);
+            throw error;
         }
     }
 }

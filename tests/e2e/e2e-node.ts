@@ -279,7 +279,7 @@ describe('e2e node', function () {
 
             // Check if API key is missing
             if (chatResponse.status === 503) {
-                console.log('Skipping chat test: GEMINI_API_KEY not configured');
+                console.log('Skipping chat test: GROQ_API_KEY not configured');
                 this.skip();
                 return;
             }
@@ -348,12 +348,12 @@ describe('e2e node', function () {
             chatHistory.push({ role: 'user', content: firstQuestion });
             chatHistory.push({ role: 'assistant', content: firstResponse });
         } catch (error: any) {
-            // If GEMINI_API_KEY is not set, skip the test
-            if ((error.message && error.message.includes('Gemini API key')) || 
+            // If GROQ_API_KEY is not set, skip the test
+            if ((error.message && error.message.includes('Groq API key')) || 
                 (error.response && error.response.status === 503 && 
                  error.response.data && error.response.data.error && 
-                 error.response.data.error.includes('GEMINI_API_KEY'))) {
-                console.log('Skipping chat test: GEMINI_API_KEY not configured');
+                 error.response.data.error.includes('GROQ_API_KEY'))) {
+                console.log('Skipping chat test: GROQ_API_KEY not configured');
                 this.skip();
                 return;
             }
@@ -445,12 +445,12 @@ describe('e2e node', function () {
             // The follow-up response should show awareness of the previous conversation
             // (though we can't assert specific content since LLM responses are variable)
         } catch (error: any) {
-            // If GEMINI_API_KEY is not set, skip the test
-            if ((error.message && error.message.includes('Gemini API key')) || 
+            // If GROQ_API_KEY is not set, skip the test
+            if ((error.message && error.message.includes('Groq API key')) || 
                 (error.response && error.response.status === 503 && 
                  error.response.data && error.response.data.error && 
-                 error.response.data.error.includes('GEMINI_API_KEY'))) {
-                console.log('Skipping follow-up chat test: GEMINI_API_KEY not configured');
+                 error.response.data.error.includes('GROQ_API_KEY'))) {
+                console.log('Skipping follow-up chat test: GROQ_API_KEY not configured');
                 this.skip();
                 return;
             }

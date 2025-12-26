@@ -199,8 +199,8 @@ export const getAuthenticatedRouter = (): Router => {
                 }
 
                 // Check if chat service is configured
-                if (!process.env.GEMINI_API_KEY) {
-                    return res.status(503).json({ error: 'Chat service not configured. GEMINI_API_KEY is required.' });
+                if (!process.env.GROQ_API_KEY) {
+                    return res.status(503).json({ error: 'Chat service not configured. GROQ_API_KEY is required.' });
                 }
 
                 // Set up SSE headers
@@ -241,8 +241,19 @@ export const getAuthenticatedRouter = (): Router => {
                 }
 
                 // Check if it's an API key error
-                if (error.message && error.message.includes('Gemini API key')) {
-                    return res.status(503).json({ error: 'Chat service not configured. GEMINI_API_KEY is required.' });
+                if (error.message && error.message.includes('Groq API key')) {
+                    return res.status(503).json({ error: 'Chat service not configured. GROQ_API_KEY is required.' });
+                }
+
+                // Handle 429 Rate Limit error
+                if (error.status === 429 || (error.message && error.message.includes('429'))) {
+                    if (!res.headersSent) {
+                        return res.status(429).json({ error: 'Groq API rate limit exceeded. Please try again later.' });
+                    } else {
+                        res.write(`data: ${JSON.stringify({ error: 'Rate limit exceeded' })}\n\n`);
+                        res.end();
+                        return;
+                    }
                 }
 
                 // For SSE, we need to send error as an event
