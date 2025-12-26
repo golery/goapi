@@ -52,4 +52,6 @@ export class Node {
     name!: string | null;
     @Column({type: "varchar", nullable: true})
     text!: string | null;
+    @Column({type: "jsonb", nullable: true})
+    data!: Record<string, any> | null;
 }

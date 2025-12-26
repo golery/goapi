@@ -42,7 +42,12 @@ export async function initMikroOrm() {
 }
 
 export async function closeDb() {
-    await orm.close();
+    if (orm) {
+        await orm.close();
+    }
+    if (dataSource && dataSource.isInitialized) {
+        await dataSource.destroy();
+    }
 }
 export const initDb = async () => { 
     await initMikroOrm();
