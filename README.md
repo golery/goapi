@@ -92,17 +92,22 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
    localhost portforward is turned on by default for WSL
 5. Migration: run manually script in migrations folder   
 
-# RELEASE
-0. Turn on docker in Windows machine
-1. ./scripts/deploy-sandbox.sh to build and deploy a sandbox version to koybe
-   Needs docker login with user goloery.
+# RELEASE PROCEDURE
+Run docker from Windows host machine
+Inside WSL ubuntu, run `docker login`
+
+## Sandbox deploy
+1. `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe
    Install https://www.koyeb.com/docs/build-and-deploy/cli/installation
    koyeb login
-   `
-2. ./scripts/release.sh: create tag for release (needs deploy-sandbox.sh)
-3. Open google console, connect ssh web to node
-manually pull and run the docker image on gcp
-TAG=20240922180503 source /home/lyhoanghai/app-configs/scripts/run-goapi.sh
+
+## Production deploy
+1. (needs deploy-sandbox.sh) `./scripts/release.sh`:  
+   It will create a tag for docker image and output a command to run in GCP
+   ex: TAG=20240922180503 source /home/lyhoanghai/app-configs/scripts/run-goapi.sh
+2. Open google console: https://console.cloud.google.com/compute/instances?project=golery
+   connect ssh web to node
+   Run the command from step 1
 
 # Setup WSL
 1. apt install zsh
