@@ -150,6 +150,7 @@ describe('e2e node', function () {
             '/api/pencil/update',
             {
                 id: childNodeId,
+                type: 'IMAGE',
                 data: {
                     images: updatedImages,
                 },
@@ -165,6 +166,9 @@ describe('e2e node', function () {
         assert.equal(updateNodeResponse.status, 200, `Expected status 200, got ${updateNodeResponse.status}`);
         assert.isObject(updateNodeResponse.data);
         assert.equal(updateNodeResponse.data.id, childNodeId);
+        
+        // Verify type was updated
+        assert.equal(updateNodeResponse.data.type, 'IMAGE', 'Type should be updated to IMAGE');
         
         // Verify images were updated
         assert.isObject(updateNodeResponse.data.data);
