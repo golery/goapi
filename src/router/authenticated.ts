@@ -96,9 +96,12 @@ export const getAuthenticatedRouter = (): Router => {
     router.post(
         '/pencil/add/:nodeId',
         apiHandler(async (req, res) => {
+            const position = req.body.position !== undefined ? parseInt(req.body.position) : 0;
+            const data = req.body.data;
             const node = await services().pencilService.addNode(
                 parseInt(req.params.nodeId),
-                parseInt(req.params.position),
+                position,
+                data,
             );
             res.json(node);
         }),

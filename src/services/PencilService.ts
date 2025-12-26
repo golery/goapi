@@ -14,6 +14,7 @@ export interface CreateSpaceRequest {
 
 export interface UpdateNodeRequest extends Node {
     tags?: string[];
+    data?: Record<string, any> | null;
 }
 
 const USER_ID = '1';
@@ -248,7 +249,7 @@ export class PencilService {
         return { book, node };
     }
 
-    async addNode(parentId: number, position: number = 0): Promise<Node> {
+    async addNode(parentId: number, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
         console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({
             where: { id: parentId },
@@ -264,6 +265,7 @@ export class PencilService {
             app: APP_PENCIL,
             parentId: parentId,
             bookId: parent.bookId,
+            data: data || null,
         };
 
         const node = await nodeRepo.save(createNode);
@@ -283,8 +285,9 @@ export class PencilService {
     async updateNode(node: UpdateNodeRequest): Promise<Node> {
         console.log(`Start upload node ${node.id}`);
         
-        // Extract tags from the request before deleting from node object
+        // Extract tags and data from the request before deleting from node object
         const tags = (node as any).tags;
+        const data = (node as any).data;
         
         // Wrap all operations in a transaction to ensure atomicity
         return await dataSource.transaction(async (entityManager) => {
@@ -320,8 +323,12 @@ export class PencilService {
             delete (node as any).createTime;
             delete (node as any).updateTime;
             delete (node as any).tags;
+            delete (node as any).data;
             
-            return await transactionNodeRepo.save({ ...existing, ...node });
+            // Handle data field - if provided, use it; otherwise preserve existing
+            const dataToSave = data !== undefined ? data : existing.data;
+            
+            return await transactionNodeRepo.save({ ...existing, ...node, data: dataToSave });
         });
     }
 
