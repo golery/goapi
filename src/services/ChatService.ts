@@ -65,7 +65,11 @@ export class ChatService {
         // Add system context with node content
         messages.push({
             role: 'system',
-            content: `You are helping the user understand the following node content:\n\n${nodeContent}\n\nPlease answer questions about this content clearly and concisely.`,
+            content:
+                'You are a helpful note assistant. You are given a set of hierarchically ' +
+                'structured pages. Your task is to answer questions about the content of ' +
+                'these pages.\n\n Instructions: - Concise and clear answer, no filler words. Use bullet points, markdown. \n - If you need to reference to a node, output it as [[node:<node_id>]].' +
+                `\n\ncontent:\n\n${nodeContent}\n\n` 
         });
 
         // Add chat history if provided
