@@ -1,6 +1,5 @@
 import express from 'express';
 import compression from 'compression'; // compresses requests
-import bodyParser from 'body-parser';
 import cors from 'cors';
 import 'reflect-metadata';
 import {getApiRouter} from './router/api';

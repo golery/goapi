@@ -109,6 +109,9 @@ Inside WSL ubuntu, run `docker login`
    connect ssh web to node
    Run the command from step 1
 
+## SECRETS and CONFIGURATION
+1. Store in app-configs, checked out in gcp node (gitlab)
+
 # Setup WSL
 1. apt install zsh
    chsh -s $(which zsh)
