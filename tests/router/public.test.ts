@@ -14,7 +14,7 @@ describe('router/public', function () {
         await loadConfig();
         await initMikroOrm();
     });
-    after(async () => {    
+    after(async () => {
         await closeDb();
     });
     this.afterEach(() => {
@@ -122,28 +122,28 @@ describe('router/public', function () {
                 .expect(200);
             assert.equal(signInWithGoogleAgain.userId, userId);
         });
-        
+
         it('#it.signup account for two different appIds', async () => {
             const email = `test+${uuid.v4()}@test.com`;
             const password1 = uuid.v4();
             const appId1 = AppIds.TEST;
-    
+
             const password2 = uuid.v4();
             const appId2 = AppIds.TEST2;
-    
+
             // Given user sign up with two appIds
             const { body: response1 } = await request(app)
                 .post('/api/public/signup')
                 .send({ appId: appId1, email, password: password1 })
                 .expect(200);
-    
+
             const { body: response2 } = await request(app)
                 .post('/api/public/signup')
                 .send({ appId: appId2, email, password: password2 })
                 .expect(200);
-    
+
             assert.isTrue(response1.userId !== response2.userId);
-    
+
             // Then user should be able to login on both account
             const { body: response3 } = await request(app)
                 .post('/api/public/signin')
@@ -155,12 +155,99 @@ describe('router/public', function () {
             assert.equal(response1.userId, response3.userId);
             assert.equal(response2.userId, response4.userId);
         });
-    });
 
-    it('#config', async () => {
-        const { body: config } = await request(app)
-        .get('/api/public/config/stocky')    
-        .expect(200);
-        assert.deepEqual(config, { appId: AppIds.STOCKY, minVersion: 1, apiBaseUrl: 'https://api.stocky.io' });
+        describe('signInGoogle with optional appId', function () {
+            it('#it.signInGoogle without appId for an existing user', async () => {
+                const email = `test+${uuid.v4()}@test.com`;
+                const appId = AppIds.STOCKY;
+                const password = uuid.v4();
+
+                // Create user first
+                await request(app)
+                    .post('/api/public/signup')
+                    .send({ appId, email, password })
+                    .expect(200);
+
+                sinon.stub(google, 'getTokenInfo').resolves({ aud: GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`][0], email, email_verified: true, expires_in: 60 });
+
+                // Sign in without appId
+                const { body: signInResponse } = await request(app)
+                    .post('/api/public/signInGoogle')
+                    .send({ accessToken: 'some-token' })
+                    .expect(200);
+
+                assert.equal(signInResponse.appId, appId);
+                assert.equal(signInResponse.email, email);
+            });
+
+            it('#it.signInGoogle without appId for multiple existing users (picks lowest appId)', async () => {
+                const email = `test+${uuid.v4()}@test.com`;
+                const appId1 = AppIds.STOCKY; // 2
+                const appId2 = AppIds.BEANS; // 4
+                const password = uuid.v4();
+
+                // Create users for both apps
+                await request(app).post('/api/public/signup').send({ appId: appId1, email, password }).expect(200);
+                await request(app).post('/api/public/signup').send({ appId: appId2, email, password }).expect(200);
+
+                // We expect it to pick STOCKY (2) because it's lower than BEANS (4)
+                sinon.stub(google, 'getTokenInfo').resolves({
+                    aud: GOOGLE_SIGN_IN_CLIENT_ID[`${appId1}`][0],
+                    email,
+                    email_verified: true,
+                    expires_in: 60
+                });
+
+                const { body: signInResponse } = await request(app)
+                    .post('/api/public/signInGoogle')
+                    .send({ accessToken: 'some-token' })
+                    .expect(200);
+
+                assert.equal(signInResponse.appId, appId1);
+            });
+
+            it('#it.signInGoogle without appId for a new user (inferred from aud)', async () => {
+                const email = `test+${uuid.v4()}@test.com`;
+                const appId = AppIds.BEANS;
+
+                sinon.stub(google, 'getTokenInfo').resolves({
+                    aud: GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`][0],
+                    email,
+                    email_verified: true,
+                    expires_in: 60
+                });
+
+                const { body: signInResponse } = await request(app)
+                    .post('/api/public/signInGoogle')
+                    .send({ accessToken: 'some-token' })
+                    .expect(200);
+
+                assert.equal(signInResponse.appId, appId);
+                assert.equal(signInResponse.email, email);
+            });
+
+            it('#it.signInGoogle without appId and unknown aud fails', async () => {
+                const email = `test+${uuid.v4()}@test.com`;
+
+                sinon.stub(google, 'getTokenInfo').resolves({
+                    aud: 'unknown-client-id',
+                    email,
+                    email_verified: true,
+                    expires_in: 60
+                });
+
+                await request(app)
+                    .post('/api/public/signInGoogle')
+                    .send({ accessToken: 'some-token' })
+                    .expect(400);
+            });
+        });
+
+        it('#config', async () => {
+            const { body: config } = await request(app)
+                .get('/api/public/config/stocky')
+                .expect(200);
+            assert.deepEqual(config, { appId: AppIds.STOCKY, minVersion: 1, apiBaseUrl: 'https://api.stocky.io' });
+        });
     });
 });

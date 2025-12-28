@@ -1,6 +1,7 @@
 import { ServerError } from "./utils/errors";
 
 export enum AppIds {
+    SSO = 0,
     PENCIL = 1,
     // Inventory app
     STOCKY = 2,
@@ -11,6 +12,7 @@ export enum AppIds {
 }
 
 const AppIdToName: Record<AppIds, string> = {
+    [AppIds.SSO]: 'sso',
     [AppIds.BEANS]: 'beans',
     [AppIds.PENCIL]: 'pencil',
     [AppIds.STOCKY]: 'stocky',
@@ -47,6 +49,9 @@ export const GOOGLE_SIGN_IN_CLIENT_ID: Record<string, string[]> = {
     [`${AppIds.BEANS}`]: [
         // Beans - Bookmarks extensions
         // https://console.cloud.google.com/apis/credentials?project=golery 
-        '578974658137-i249thql14qeej9ar2l9rms5r4cqq9lk.apps.googleusercontent.com'
+        '578974658137-i249thql14qeej9ar2l9rms5r4cqq9lk.apps.googleusercontent.com',
     ],
 }
+
+// Login without specifying app ID
+export const SSO_CLIENT_ID = '578974658137-1udaimb8b46l9f9iv6ilgkdct0hm2fap.apps.googleusercontent.com';

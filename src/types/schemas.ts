@@ -22,8 +22,8 @@ export interface SignInResponse {
 }
 
 export const SignInGoogleRequestSchema = z.object({
-    appId: z.number(),
-    accessToken: z.string(),    
+    appId: z.number().optional(),
+    accessToken: z.string(),
 });
 
 export const SecretsSchema = z.object({

@@ -1,5 +1,5 @@
 import { Group } from './../entity/Group.entity';
-import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
+import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID, SSO_CLIENT_ID } from './../contants';
 import { CreateGroupResponse, GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
@@ -52,34 +52,61 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 }
 
-export const signInGoogle = async (appId: number, accessToken: string): Promise<SignInResponse> => {
+export const signInGoogle = async (appId: number | undefined, accessToken: string): Promise<SignInResponse> => {
     const tokenInfo = await getTokenInfo(accessToken);
     const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
 
-    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
-        logger.error('Token was generated for invalid clientId', { appId, aud });
-        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
-    }
     if (!emailVerified) {
         throw new ServerError(400, 'Fail to sign in via Google: Email was not verified');
     }
     if (expiresIn < 1) {
         throw new ServerError(400, 'Fail to sign in via Google: Token expired');
     }
-    logger.info('Retrieved token info from Google', tokenInfo);
+
+    let effectiveAppId = appId;
     const em = getEm();
-    let user = await em.findOne(User, { email, appId });
+
+    if (effectiveAppId === undefined) {
+        // find the user with lowest appId to use
+        const existingUsers = await em.find(User, { email }, { orderBy: { appId: 'ASC' }, limit: 1 });
+        if (existingUsers.length > 0) {
+            effectiveAppId = existingUsers[0].appId;
+            logger.info(`Inferred appId=${effectiveAppId} for user ${email} from existing account`);
+        } else {
+            // find appId from aud
+            for (const [id, clientIds] of Object.entries(GOOGLE_SIGN_IN_CLIENT_ID)) {
+                if (clientIds.includes(aud)) {
+                    effectiveAppId = parseInt(id);
+                    logger.info(`Inferred appId=${effectiveAppId} for user ${email} from token audience`);
+                    break;
+                }
+            }
+        }
+    }
+
+    if (effectiveAppId === undefined) {
+        logger.error('Could not determine appId and token was generated for unknown clientId', { aud });
+        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID or appId missing');
+    }
+
+    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${effectiveAppId}`]?.includes(aud) && aud !== SSO_CLIENT_ID) {
+        logger.error('Token was generated for invalid clientId', { appId: effectiveAppId, aud });
+        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
+    }
+
+    logger.info('Retrieved token info from Google', tokenInfo);
+    let user = await em.findOne(User, { email, appId: effectiveAppId });
     if (!user) {
         user = new User();
-        user.appId = appId;
+        user.appId = effectiveAppId;
         user.email = email;
         // no password
         user.passwordHash = undefined;
         await em.persistAndFlush(user);
-        logger.info(`Created a new user ${user.id} via Google Sign In`);
+        logger.info(`Created a new user ${user.id} via Google Sign In (appId=${effectiveAppId})`);
     } else {
         // it's possible that existing user was created with password
-        logger.info(`Sign in with Google for an existing user ${user.id}`);
+        logger.info(`Sign in with Google for an existing user ${user.id} (appId=${effectiveAppId})`);
     }
     const token = createAccessToken(user);
 
