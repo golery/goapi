@@ -1,12 +1,12 @@
 -- Migration: Create bookmark management tables
 -- Date: 2024-12-27
 
--- Enable UUID extension if not exists
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension if not exists (only needed for versions < 13)
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Collections table
 CREATE TABLE bookmark_collection (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -17,7 +17,7 @@ CREATE INDEX idx_bookmark_collection_user_id ON bookmark_collection(user_id);
 
 -- Bookmarks table
 CREATE TABLE bookmark (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     collection_id UUID NOT NULL,
     url TEXT NOT NULL,
     name VARCHAR(255) NOT NULL,
