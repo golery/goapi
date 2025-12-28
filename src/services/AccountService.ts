@@ -55,8 +55,9 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 export const signInGoogle = async (appId: number, accessToken: string): Promise<SignInResponse> => {
     const tokenInfo = await getTokenInfo(accessToken);
     const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
+
     if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
-        logger.error('Token was generated for invalid clientId', { tokenInfo, appId });
+        logger.error('Token was generated for invalid clientId', { appId, aud });
         throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
     }
     if (!emailVerified) {
