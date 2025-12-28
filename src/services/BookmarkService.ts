@@ -5,9 +5,9 @@ import { bookmarkCollectionRepo, bookmarkRepo, bookmarkTagRepo, dataSource } fro
 import { In } from 'typeorm';
 
 export interface CreateBookmarkRequest {
-    collectionId: string;
+    collectionId?: string;
     url: string;
-    name: string;
+    name?: string;
     description?: string;
     note?: string;
     tags?: string[];
@@ -15,11 +15,11 @@ export interface CreateBookmarkRequest {
 
 export interface UpdateBookmarkRequest {
     url?: string;
-    name?: string;
+    name?: string | null;
     description?: string;
     note?: string;
     tags?: string[];
-    collectionId?: string;
+    collectionId?: string | null;
 }
 
 export class BookmarkService {
@@ -50,19 +50,20 @@ export class BookmarkService {
     }
 
     async addBookmark(userId: string, request: CreateBookmarkRequest): Promise<Bookmark> {
-        // Validate collection exists and belongs to user
-        const collection = await bookmarkCollectionRepo.findOne({
-            where: { id: request.collectionId, userId },
-        });
-        if (!collection) {
-            throw new Error('Collection not found or access denied');
+        if (request.collectionId) {
+            const collection = await bookmarkCollectionRepo.findOne({
+                where: { id: request.collectionId, userId },
+            });
+            if (!collection) {
+                throw new Error('Collection not found or access denied');
+            }
         }
 
         return await dataSource.transaction(async (manager) => {
             const bookmark = new Bookmark();
-            bookmark.collectionId = request.collectionId;
+            bookmark.collectionId = request.collectionId ?? null;
             bookmark.url = request.url;
-            bookmark.name = request.name;
+            bookmark.name = request.name ?? null;
             bookmark.description = request.description ?? null;
             bookmark.note = request.note ?? null;
             bookmark.userId = userId;
@@ -96,12 +97,14 @@ export class BookmarkService {
             if (request.description !== undefined) bookmark.description = request.description;
             if (request.note !== undefined) bookmark.note = request.note;
             if (request.collectionId !== undefined) {
-                // Validate new collection
-                const collection = await bookmarkCollectionRepo.findOne({
-                    where: { id: request.collectionId, userId },
-                });
-                if (!collection) throw new Error('Target collection not found');
-                bookmark.collectionId = request.collectionId;
+                if (request.collectionId !== null) {
+                    // Validate new collection
+                    const collection = await bookmarkCollectionRepo.findOne({
+                        where: { id: request.collectionId, userId },
+                    });
+                    if (!collection) throw new Error('Target collection not found');
+                }
+                bookmark.collectionId = request.collectionId ?? null;
             }
 
             const updatedBookmark = await manager.save(bookmark);
@@ -127,7 +130,7 @@ export class BookmarkService {
             }
 
             return updatedBookmark;
-        });
+        }) ?? null;
     }
 
     async deleteBookmark(id: string, userId: string): Promise<boolean> {

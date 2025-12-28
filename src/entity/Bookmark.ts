@@ -11,14 +11,14 @@ export class Bookmark {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ name: 'collection_id' })
-    collectionId!: string;
+    @Column({ name: 'collection_id', type: 'uuid', nullable: true })
+    collectionId!: string | null;
 
     @Column()
     url!: string;
 
-    @Column()
-    name!: string;
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    name!: string | null;
 
     @Column({ type: 'text', nullable: true })
     description!: string | null;
