@@ -1,5 +1,5 @@
 import { Group } from './../entity/Group.entity';
-import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID, SSO_CLIENT_ID } from './../contants';
+import { ACCESS_TOKEN_EXPIRES_IN, AppIds, GOOGLE_SIGN_IN_CLIENT_ID, SSO_CLIENT_ID } from './../contants';
 import { CreateGroupResponse, GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
@@ -63,23 +63,18 @@ export const signInGoogle = async (appId: number | undefined, accessToken: strin
         throw new ServerError(400, 'Fail to sign in via Google: Token expired');
     }
 
-    let effectiveAppId = appId;
     const em = getEm();
+    let user = await em.findOne(User, { email }, { orderBy: { appId: 'ASC' } });
+
+    let effectiveAppId = user?.appId ?? appId;
 
     if (effectiveAppId === undefined) {
-        // find the user with lowest appId to use
-        const existingUsers = await em.find(User, { email }, { orderBy: { appId: 'ASC' }, limit: 1 });
-        if (existingUsers.length > 0) {
-            effectiveAppId = existingUsers[0].appId;
-            logger.info(`Inferred appId=${effectiveAppId} for user ${email} from existing account`);
-        } else {
-            // find appId from aud
-            for (const [id, clientIds] of Object.entries(GOOGLE_SIGN_IN_CLIENT_ID)) {
-                if (clientIds.includes(aud)) {
-                    effectiveAppId = parseInt(id);
-                    logger.info(`Inferred appId=${effectiveAppId} for user ${email} from token audience`);
-                    break;
-                }
+        // find appId from aud
+        for (const [id, clientIds] of Object.entries(GOOGLE_SIGN_IN_CLIENT_ID)) {
+            if (clientIds.includes(aud)) {
+                effectiveAppId = parseInt(id);
+                logger.info(`Inferred appId=${effectiveAppId} for user ${email} from token audience`);
+                break;
             }
         }
     }
@@ -95,7 +90,6 @@ export const signInGoogle = async (appId: number | undefined, accessToken: strin
     }
 
     logger.info('Retrieved token info from Google', tokenInfo);
-    let user = await em.findOne(User, { email, appId: effectiveAppId });
     if (!user) {
         user = new User();
         user.appId = effectiveAppId;
@@ -106,7 +100,7 @@ export const signInGoogle = async (appId: number | undefined, accessToken: strin
         logger.info(`Created a new user ${user.id} via Google Sign In (appId=${effectiveAppId})`);
     } else {
         // it's possible that existing user was created with password
-        logger.info(`Sign in with Google for an existing user ${user.id} (appId=${effectiveAppId})`);
+        logger.info(`Sign in with Google for an existing user ${user.id} (appId=${user.appId})`);
     }
     const token = createAccessToken(user);
 
@@ -116,7 +110,7 @@ export const signInGoogle = async (appId: number | undefined, accessToken: strin
 };
 
 
-export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+export const signup = async (appIdInput: number | undefined, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
@@ -131,13 +125,13 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
         throw new ServerError(400, passwordValid);
     }
 
-    let user = await em.findOne(User, { email, appId });
+    let user = await em.findOne(User, { email });
     if (!!user && user.passwordHash !== undefined) {
         throw new ServerError(400, 'User already exists');
     }
     if (!user) {
         user = new User();
-        user.appId = appId;
+        user.appId = appIdInput ?? AppIds.SSO;
         user.email = email
     }
     user.password = password;
@@ -153,7 +147,7 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
 };
 
 
-export const signIn = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+export const signIn = async (appId: number | undefined, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
 
@@ -162,7 +156,7 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     logger.info(`Login with email ${email} (superAdmin=${isSuperAdminPassword})`);
     const em = getEm();
 
-    const user = await em.findOne(User, { appId, email });
+    const user = await em.findOne(User, { email }, { orderBy: { appId: 'ASC' } });
     if (!user) {
         throw new ServerError(401, 'User is not found');
     }
