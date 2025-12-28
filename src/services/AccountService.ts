@@ -89,7 +89,7 @@ export const signInGoogle = async (appId: number | undefined, accessToken: strin
         throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID or appId missing');
     }
 
-    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${effectiveAppId}`]?.includes(aud) && aud !== SSO_CLIENT_ID) {
+    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${effectiveAppId}`]?.includes(aud) && !SSO_CLIENT_ID.includes(aud)) {
         logger.error('Token was generated for invalid clientId', { appId: effectiveAppId, aud });
         throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
     }

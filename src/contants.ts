@@ -46,12 +46,13 @@ export const GOOGLE_SIGN_IN_CLIENT_ID: Record<string, string[]> = {
     [`${AppIds.TEST}`]: [
         'test-client-id'
     ],
-    [`${AppIds.BEANS}`]: [
-        // Beans - Bookmarks extensions
-        // https://console.cloud.google.com/apis/credentials?project=golery 
-        '578974658137-i249thql14qeej9ar2l9rms5r4cqq9lk.apps.googleusercontent.com',
-    ],
+    [`${AppIds.BEANS}`]: [],
 }
 
 // Login without specifying app ID
-export const SSO_CLIENT_ID = '578974658137-1udaimb8b46l9f9iv6ilgkdct0hm2fap.apps.googleusercontent.com';
+export const SSO_CLIENT_ID = [
+    // Web
+    '578974658137-1udaimb8b46l9f9iv6ilgkdct0hm2fap.apps.googleusercontent.com',
+    // Chrome extension    
+    // https://console.cloud.google.com/apis/credentials?project=golery 
+    '578974658137-i249thql14qeej9ar2l9rms5r4cqq9lk.apps.googleusercontent.com'];
