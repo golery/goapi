@@ -5,6 +5,7 @@ import { getAuthenticatedRouter } from './authenticated';
 import { getBackendRouter } from './backend';
 import { getPublicRouter } from './public';
 import { getOpsRouter } from './ops';
+import { getBeansRouter } from './beans';
 
 export const getApiRouter = (): Router => {
     const router = express.Router();
@@ -13,6 +14,8 @@ export const getApiRouter = (): Router => {
     router.use('/backend', getBackendRouter());
 
     router.use('/public', getPublicRouter());
+
+    router.use('/beans', getBeansRouter());
 
     router.use('/', getAuthenticatedRouter());
 
