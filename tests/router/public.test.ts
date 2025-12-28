@@ -123,37 +123,38 @@ describe('router/public', function () {
             assert.equal(signInWithGoogleAgain.userId, userId);
         });
 
-        it('#it.signup account for two different appIds', async () => {
+        it('#it.signup account for two different appIds (SSO behavior)', async () => {
             const email = `test+${uuid.v4()}@test.com`;
             const password1 = uuid.v4();
             const appId1 = AppIds.TEST;
 
-            const password2 = uuid.v4();
             const appId2 = AppIds.TEST2;
 
-            // Given user sign up with two appIds
+            // Given user sign up with one appId
             const { body: response1 } = await request(app)
                 .post('/api/public/signup')
                 .send({ appId: appId1, email, password: password1 })
                 .expect(200);
 
-            const { body: response2 } = await request(app)
+            // When user tries to sign up with another appId but SAME email
+            await request(app)
                 .post('/api/public/signup')
-                .send({ appId: appId2, email, password: password2 })
-                .expect(200);
+                .send({ appId: appId2, email, password: 'any-password' })
+                .expect(400); // Should fail because user already exists (SSO)
 
-            assert.isTrue(response1.userId !== response2.userId);
-
-            // Then user should be able to login on both account
+            // Then user should be able to login on both appIds and get the SAME account
             const { body: response3 } = await request(app)
                 .post('/api/public/signin')
                 .send({ appId: appId1, email, password: password1 })
                 .expect(200);
             const { body: response4 } = await request(app)
-                .post('/api/public/signin').send({ appId: appId2, email, password: password2 })
+                .post('/api/public/signin')
+                .send({ appId: appId2, email, password: password1 })
                 .expect(200);
+
             assert.equal(response1.userId, response3.userId);
-            assert.equal(response2.userId, response4.userId);
+            assert.equal(response1.userId, response4.userId);
+            assert.equal(response3.userId, response4.userId);
         });
 
         describe('signInGoogle with optional appId', function () {
