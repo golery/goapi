@@ -23,7 +23,7 @@ export interface SignInResponse {
 
 export const SignInGoogleRequestSchema = z.object({
     appId: z.number().optional(),
-    accessToken: z.string(),
+    idToken: z.string(),
 });
 
 export const SecretsSchema = z.object({

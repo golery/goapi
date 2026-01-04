@@ -12,8 +12,8 @@ export const getPublicRouter = (): Router => {
     router.post(
         '/signup',
         apiHandler(async (req) => {
-            const { appId, email, password } = SignUpRequestSchema.parse(req.body);                
-            return await signup(appId, email, password);    
+            const { appId, email, password } = SignUpRequestSchema.parse(req.body);
+            return await signup(appId, email, password);
         }),
     );
 
@@ -21,26 +21,26 @@ export const getPublicRouter = (): Router => {
         '/signin',
         apiHandler(async (req) => {
             const { appId, email, password } = SignInRequestSchema.parse(req.body);
-            return await signIn(appId, email, password);        
+            return await signIn(appId, email, password);
         }),
     );
 
     router.post(
         '/signinGoogle',
         apiHandler(async (req) => {
-            const { appId, accessToken } = SignInGoogleRequestSchema.parse(req.body);
-            return await signInGoogle(appId, accessToken);        
+            const { appId, idToken } = SignInGoogleRequestSchema.parse(req.body);
+            return await signInGoogle(appId, idToken);
         }),
     );
 
     router.get(
         '/config/stocky',
-        apiHandler(async () => {        
+        apiHandler(async () => {
             return {
                 appId: AppIds.STOCKY,
                 minVersion: 1,
                 apiBaseUrl: 'https://api.stocky.io',
-            };        
+            };
         }),
     );
 
@@ -54,7 +54,7 @@ export const getPublicRouter = (): Router => {
     router.get(
         '/health',
         apiHandler(async () => {
-            return await healthCheck();        
+            return await healthCheck();
         }),
     );
 

@@ -72,10 +72,10 @@ describe('router/public', function () {
                 .expect(200);
 
             // Then user sign in with google
-            const accessToken = `accessToken-${uuid.v4()}`;
+            const idToken = `idToken-${uuid.v4()}`;
             const { body: signUpWithGoogle } = await request(app)
                 .post('/api/public/signInGoogle')
-                .send({ appId, accessToken })
+                .send({ appId, idToken })
                 .expect(200);
             assert.equal(signUpWithPassword.userId, signUpWithGoogle.userId);
 
@@ -95,10 +95,10 @@ describe('router/public', function () {
             sinon.stub(google, 'getTokenInfo').resolves({ aud: GOOGLE_SIGN_IN_CLIENT_ID[`${AppIds.TEST}`][0], email, email_verified: true, expires_in: 60 });
 
             // Given user sign in with google
-            const accessToken = `accessToken-${uuid.v4()}`;
+            const idToken = `idToken-${uuid.v4()}`;
             const { body: signUpWithGoogle } = await request(app)
                 .post('/api/public/signInGoogle')
-                .send({ appId, accessToken })
+                .send({ appId, idToken })
                 .expect(200);
             let userId = signUpWithGoogle.userId;
 
@@ -118,7 +118,7 @@ describe('router/public', function () {
             // Then user should still be able to login with password
             const { body: signInWithGoogleAgain } = await request(app)
                 .post('/api/public/signInGoogle')
-                .send({ appId, accessToken })
+                .send({ appId, idToken })
                 .expect(200);
             assert.equal(signInWithGoogleAgain.userId, userId);
         });
@@ -174,7 +174,7 @@ describe('router/public', function () {
                 // Sign in without appId
                 const { body: signInResponse } = await request(app)
                     .post('/api/public/signInGoogle')
-                    .send({ accessToken: 'some-token' })
+                    .send({ idToken: 'some-token' })
                     .expect(200);
 
                 assert.equal(signInResponse.appId, appId);
@@ -201,7 +201,7 @@ describe('router/public', function () {
 
                 const { body: signInResponse } = await request(app)
                     .post('/api/public/signInGoogle')
-                    .send({ accessToken: 'some-token' })
+                    .send({ idToken: 'some-token' })
                     .expect(200);
 
                 assert.equal(signInResponse.appId, appId1);
@@ -220,7 +220,7 @@ describe('router/public', function () {
 
                 const { body: signInResponse } = await request(app)
                     .post('/api/public/signInGoogle')
-                    .send({ accessToken: 'some-token' })
+                    .send({ idToken: 'some-token' })
                     .expect(200);
 
                 assert.equal(signInResponse.appId, appId);
@@ -239,7 +239,7 @@ describe('router/public', function () {
 
                 await request(app)
                     .post('/api/public/signInGoogle')
-                    .send({ accessToken: 'some-token' })
+                    .send({ idToken: 'some-token' })
                     .expect(400);
             });
         });

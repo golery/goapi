@@ -52,8 +52,8 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 }
 
-export const signInGoogle = async (appId: number | undefined, accessToken: string): Promise<SignInResponse> => {
-    const tokenInfo = await getTokenInfo(accessToken);
+export const signInGoogle = async (appId: number | undefined, idToken: string): Promise<SignInResponse> => {
+    const tokenInfo = await getTokenInfo(idToken);
     const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
 
     if (!emailVerified) {
