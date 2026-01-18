@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
 import { services } from '../services/Factory';
 import { apiHandler } from '../utils/express-utils';
+import { extractMetadata } from '../utils/url-metadata';
 
 export const getBeansRouter = (): Router => {
     const router = express.Router();
@@ -79,6 +80,17 @@ export const getBeansRouter = (): Router => {
         '/bookmark',
         apiHandler(async (req) => {
             return await services().bookmarkService.getAllBookmarks(req.ctx.userId.toString());
+        }),
+    );
+
+    router.post(
+        '/web/metadata',
+        apiHandler(async (req) => {
+            const { url } = req.body;
+            if (!url) {
+                throw new Error('URL is required'); // Or use a proper bad request error if available
+            }
+            return await extractMetadata(url);
         }),
     );
 
