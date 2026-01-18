@@ -22,9 +22,9 @@ export const getAuthenticatedRouter = (): Router => {
     router.post(
         '/file',
         apiHandler(async (req) => {
-            const contentType = req.header('content-type');        
+            const contentType = req.header('content-type');
             return uploadFile(req.ctx, contentType, req);
-      }),
+        }),
     );
 
     router.get(
@@ -32,6 +32,7 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req, res) => {
             const books = await services().pencilService.query(
                 parseInt(req.params.bookId),
+                req.ctx.userId.toString(),
             );
             res.json(books);
         }),
@@ -47,7 +48,7 @@ export const getAuthenticatedRouter = (): Router => {
             const tags = Array.isArray(tagsParam)
                 ? tagsParam.map(t => String(t))
                 : String(tagsParam).split(',').map(t => t.trim()).filter(t => t);
-            const nodes = await services().pencilService.findNodesByTags(tags);
+            const nodes = await services().pencilService.findNodesByTags(tags, req.ctx.userId.toString());
             res.json(nodes);
         }),
     );
@@ -71,7 +72,7 @@ export const getAuthenticatedRouter = (): Router => {
     router.get(
         '/pencil/book',
         apiHandler(async (req, res) => {
-            const books = await services().pencilService.getBooks();
+            const books = await services().pencilService.getBooks(req.ctx.userId.toString());
             res.json(books);
         }),
     );
@@ -79,7 +80,7 @@ export const getAuthenticatedRouter = (): Router => {
     router.post(
         '/pencil/book',
         apiHandler(async (req, res) => {
-            const books = await services().pencilService.createBook(req.body);
+            const books = await services().pencilService.createBook(req.body, req.ctx.userId.toString());
             res.json(books);
         }),
     );
@@ -88,6 +89,7 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req, res) => {
             const result = await services().pencilService.deleteBook(
                 parseInt(req.params.bookId),
+                req.ctx.userId.toString(),
             );
             res.json(result);
         }),
@@ -99,6 +101,7 @@ export const getAuthenticatedRouter = (): Router => {
             const node = await services().pencilService.moveNode(
                 parseInt(req.params.nodeId),
                 req.body,
+                req.ctx.userId.toString(),
             );
             res.json(node);
         }),
@@ -111,6 +114,7 @@ export const getAuthenticatedRouter = (): Router => {
             const data = req.body.data;
             const node = await services().pencilService.addNode(
                 parseInt(req.params.nodeId),
+                req.ctx.userId.toString(),
                 position,
                 data,
             );
@@ -123,6 +127,7 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req, res) => {
             const node = await services().pencilService.updateNode(
                 req.body as Node,
+                req.ctx.userId.toString(),
             );
             res.json(node);
         }),
@@ -132,6 +137,7 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req, res) => {
             const node = await services().pencilService.deleteNode(
                 parseInt(req.params.nodeId),
+                req.ctx.userId.toString(),
             );
             res.json(node);
         }),
@@ -162,7 +168,7 @@ export const getAuthenticatedRouter = (): Router => {
     }));
 
     router.put('/kv', apiHandler(async (req) => {
-        return await putKeyValues(req.ctx,req.body);
+        return await putKeyValues(req.ctx, req.body);
     }));
 
     // ping and return current authenticated user
@@ -231,11 +237,11 @@ export const getAuthenticatedRouter = (): Router => {
                 res.end();
             } catch (error: any) {
                 logger.error('Error in chat endpoint', { error: error.message, stack: error.stack });
-                
+
                 if (error.name === 'ZodError') {
                     return res.status(400).json({ error: 'Invalid request body', details: error.errors });
                 }
-                
+
                 if (error instanceof BadRequestError) {
                     return res.status(400).json({ error: error.message });
                 }

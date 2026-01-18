@@ -13,4 +13,6 @@ export class Book {
     name!: string;
     @Column()
     order!: number;
+    @Column()
+    userId!: string;
 }

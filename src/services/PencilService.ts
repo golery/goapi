@@ -18,7 +18,6 @@ export interface UpdateNodeRequest extends Omit<Node, 'data'> {
     data?: Record<string, any> | null;
 }
 
-const USER_ID = '1';
 
 const applyRecursively = async (
     nodeId: number,
@@ -49,17 +48,17 @@ const findSubTreeNodeIds = async (
     }
     const childrenIds = node.children
         ? await Promise.all(
-              node.children.map(async (childId) => {
-                  const result = await findSubTreeNodeIds(childId, nodeRepo);
-                  if (!result) {
-                      console.log(
-                          `Node ${nodeId} contains invalid children ${childId}. Skip deleting.`,
-                          node.children,
-                      );
-                      return [];
-                  }
-              }),
-          )
+            node.children.map(async (childId) => {
+                const result = await findSubTreeNodeIds(childId, nodeRepo);
+                if (!result) {
+                    console.log(
+                        `Node ${nodeId} contains invalid children ${childId}. Skip deleting.`,
+                        node.children,
+                    );
+                    return [];
+                }
+            }),
+        )
         : [];
     return [node.id, ...childrenIds.flat() as any];
 };
@@ -85,13 +84,14 @@ export class PencilService {
     async moveNode(
         nodeId: number,
         request: { newBookId?: number; newParentId: number; pos: number },
+        userId: string,
     ): Promise<Node> {
         console.log(`Start move node ${nodeId}`);
         return await dataSource.transaction(async (entityManager) => {
             const nodeRepo = entityManager.getRepository(Node);
             const { newParentId, pos } = request;
             const node = await nodeRepo.findOneOrFail({
-                where: { id: nodeId },
+                where: { id: nodeId, userId },
             });
 
             if (node.parentId === newParentId) {
@@ -182,12 +182,12 @@ export class PencilService {
         });
     }
 
-    async deleteNode(nodeId: number): Promise<number[]> {
+    async deleteNode(nodeId: number, userId: string): Promise<number[]> {
         console.log(`Start delete node ${nodeId}`);
         return await dataSource.transaction(async (entityManager) => {
             const nodeRepo = entityManager.getRepository(Node);
             const node = await nodeRepo.findOneOrFail({
-                where: { id: nodeId },
+                where: { id: nodeId, userId },
             });
             if (!node.parentId) {
                 throw new BadRequestError('Cannot delete root node');
@@ -206,12 +206,25 @@ export class PencilService {
         }) as any;
     }
 
-    async getBooks() {
-        return await bookRepo.find({ order: { order: 'ASC' } });
+    async getBooks(userId: string) {
+        const books = await bookRepo.find({ where: { userId }, order: { order: 'ASC' } });
+        if (books.length === 0) {
+            console.log(`No books found for user ${userId}, initializing default book`);
+            const { book } = await this.createBook(
+                {
+                    userId,
+                    name: 'My Space',
+                    code: 'personal',
+                },
+                userId,
+            );
+            return [book];
+        }
+        return books;
     }
 
-    async query(bookId: number) {
-        return await nodeRepo.find({ where: { app: 1, bookId } });
+    async query(bookId: number, userId: string) {
+        return await nodeRepo.find({ where: { app: 1, bookId, userId } });
     }
 
     private async generateNodeId(): Promise<number> {
@@ -223,7 +236,7 @@ export class PencilService {
         return parseInt(nodeId);
     }
 
-    async createBook(request: CreateSpaceRequest) {
+    async createBook(request: CreateSpaceRequest, userId: string) {
         const nodeId = await this.generateNodeId();
         const { bookId } = await dataSource
             .createQueryBuilder()
@@ -234,7 +247,7 @@ export class PencilService {
         const node = await nodeRepo.save({
             id: nodeId,
             app: APP_PENCIL,
-            userId: USER_ID,
+            userId,
             bookId,
 
             name: request.name,
@@ -245,16 +258,20 @@ export class PencilService {
             id: bookId,
             code: request.code,
             rootId: node.id,
+            userId,
             name: request.name,
         });
         return { book, node };
     }
 
-    async deleteBook(bookId: number) {
+    async deleteBook(bookId: number, userId: string) {
         return await dataSource.transaction(async (entityManager) => {
             const transactionNodeRepo = entityManager.getRepository(Node);
             const transactionBookRepo = entityManager.getRepository(Book);
-            
+
+            // Verify ownership
+            await transactionBookRepo.findOneOrFail({ where: { id: bookId, userId } });
+
             // Delete all tags for all nodes in this book
             // The column name is 'space' in the database (mapped to bookId in Node entity)
             await entityManager.query(
@@ -267,12 +284,12 @@ export class PencilService {
 
             // Delete the book itself
             await transactionBookRepo.delete(bookId);
-            
+
             return { success: true };
         });
     }
 
-    async addNode(parentId: number, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
+    async addNode(parentId: number, userId: string, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
         console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({
             where: { id: parentId },
@@ -284,7 +301,7 @@ export class PencilService {
         const nodeId = await this.generateNodeId();
         const createNode: Partial<Node> = {
             id: nodeId,
-            userId: USER_ID,
+            userId,
             app: APP_PENCIL,
             parentId: parentId,
             bookId: parent.bookId,
@@ -305,20 +322,20 @@ export class PencilService {
         return node;
     }
 
-    async updateNode(node: UpdateNodeRequest): Promise<Node> {
+    async updateNode(node: UpdateNodeRequest, userId: string): Promise<Node> {
         console.log(`Start upload node ${node.id}`);
-        
+
         // Extract tags and data from the request before deleting from node object
         const tags = (node as any).tags;
         const data = (node as any).data;
-        
+
         // Wrap all operations in a transaction to ensure atomicity
         return await dataSource.transaction(async (entityManager) => {
             const transactionNodeRepo = entityManager.getRepository(Node);
             const existing = await transactionNodeRepo.findOneOrFail({
-                where: { id: node.id },
+                where: { id: node.id, userId },
             });
-            
+
             // Handle tags update if provided
             if (tags !== undefined) {
                 // Delete all existing tags for this node using raw SQL within transaction
@@ -326,10 +343,10 @@ export class PencilService {
                     'DELETE FROM node_tag WHERE node_id = $1',
                     [node.id]
                 );
-                
+
                 // Insert new tags if any using raw SQL within transaction
                 if (tags && Array.isArray(tags) && tags.length > 0) {
-                    const values = tags.map((tag: string, index: number) => 
+                    const values = tags.map((tag: string, index: number) =>
                         `($${index * 2 + 1}, $${index * 2 + 2})`
                     ).join(', ');
                     const params = tags.flatMap((tag: string) => [node.id, tag]);
@@ -339,7 +356,7 @@ export class PencilService {
                     );
                 }
             }
-            
+
             // Clean up node object before saving
             delete (node as any).userId;
             delete (node as any).app;
@@ -347,23 +364,23 @@ export class PencilService {
             delete (node as any).updateTime;
             delete (node as any).tags;
             delete (node as any).data;
-            
+
             // Handle data field - if provided, use it; otherwise preserve existing
             const dataToSave = data !== undefined ? data : existing.data;
-            
+
             return await transactionNodeRepo.save({ ...existing, ...node, data: dataToSave });
         });
     }
 
-    async findNodesByTags(tags: string[]): Promise<Node[]> {
+    async findNodesByTags(tags: string[], userId: string): Promise<Node[]> {
         if (!tags || tags.length === 0) {
             return [];
         }
-        
+
         // For AND query: find nodes that have ALL of the given tags
         // We'll group by nodeId and count distinct tags per node
         // A node must have all tags, so count should equal tags.length
-        
+
         const tagPlaceholders = tags.map((_, i) => `$${i + 1}`).join(',');
         const query = `
             SELECT node_id
@@ -372,20 +389,20 @@ export class PencilService {
             GROUP BY node_id
             HAVING COUNT(DISTINCT tag) = $${tags.length + 1}
         `;
-        
+
         const result = await dataSource.query(query, [...tags, tags.length]);
         const nodeIds = result.map((row: any) => {
             // Handle both snake_case and camelCase column names
             const nodeId = row.node_id ?? row.nodeId;
             return parseInt(String(nodeId));
         }).filter((id: number) => !isNaN(id));
-        
+
         if (nodeIds.length === 0) {
             return [];
         }
-        
+
         return await nodeRepo.find({
-            where: { id: In(nodeIds) },
+            where: { id: In(nodeIds), userId },
         });
     }
 
@@ -439,14 +456,14 @@ export class PencilService {
                     }
                 }
             }
-            
+
             // To prevent infinite loop if some IDs in currentBatch were already visited or not found
             if (nodes.length === 0 && queue.length > 0) {
-               // Mark all as visited to avoid re-processing
-               currentBatch.forEach(id => visited.add(id));
+                // Mark all as visited to avoid re-processing
+                currentBatch.forEach(id => visited.add(id));
             }
         }
-        
+
         return Array.from(result.values());
     }
 }

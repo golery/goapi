@@ -18,10 +18,20 @@ export const apiHandler =
             logger.info(`REQUEST [${req.method} ${req.url}]`, { ctx });
             execute(req as ApiRequest, res)
                 .then((data) => {
-                    res.send(data);
+                    if (!res.headersSent) {
+                        res.send(data);
+                    }
                     logger.info(`DONE-REQUEST. [${req.method} ${req.url}]: 200 in ${Date.now() - startTime}ms`, { ctx });
                 })
                 .catch((err) => {
+                    const errorMsg = err instanceof Error ? err.message : String(err);
+                    const errorStack = err instanceof Error ? err.stack : undefined;
+
+                    if (res.headersSent) {
+                        logger.error(`FAILED REQUEST [${req.method} ${req.url}] (Headers already sent)`, { ctx, error: errorMsg, stack: errorStack });
+                        return next(err);
+                    }
+
                     if (err instanceof ServerError) {
                         const errorResponse = {
                             code: err.code,
@@ -29,7 +39,7 @@ export const apiHandler =
                             data: err.data,
                         }
                         res.status(err.code).json(errorResponse);
-                        logger.warn(`FAILED REQUEST [${req.method} ${req.url}]: ${err.code} ${err.message}`, { ctx: (req as any).ctx, errorResponse });
+                        logger.warn(`FAILED REQUEST [${req.method} ${req.url}]: ${err.code} ${err.message}`, { ctx, errorResponse });
                     } else if (err.isAxiosError) {
                         const { response: errResponse } = err;
                         if (errResponse) {
@@ -38,14 +48,14 @@ export const apiHandler =
                                 message: errResponse.statusText,
                                 data: errResponse.data,
                             };
-                            logger.error(`FAILED REQUEST [${req.method} ${req.url}]: Downstream error from ${err.response.config?.method} ${err.response.config?.url}`, { ctx: (req as any).ctx, response });
+                            logger.error(`FAILED REQUEST [${req.method} ${req.url}]: Downstream error`, { ctx, response, error: errorMsg });
                             res.status(errResponse.status).json(response);
                         } else {
-                            logger.error(`FAILED REQUEST [${req.method} ${req.url}]`, { ctx: (req as any).ctx });
+                            logger.error(`FAILED REQUEST [${req.method} ${req.url}] (No response)`, { ctx, error: errorMsg });
                             next(err);
                         }
                     } else {
-                        logger.error(`FAILED REQUEST [${req.method} ${req.url}]`, { ctx: (req as any).ctx });
+                        logger.error(`FAILED REQUEST [${req.method} ${req.url}]`, { ctx, error: errorMsg, stack: errorStack });
                         next(err);
                     }
                 });
