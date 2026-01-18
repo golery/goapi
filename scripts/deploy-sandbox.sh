@@ -1,3 +1,6 @@
+#!/bin/bash
+set -eo pipefail
+
 # In order to use
 # koyeb login (PAT is in 1password)
 # docker login -u golery

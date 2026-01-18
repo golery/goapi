@@ -94,7 +94,7 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 
 # RELEASE PROCEDURE
 Run docker from Windows host machine
-Inside WSL ubuntu, run `docker login`
+Inside WSL ubuntu, run `docker login -u golery`
 
 ## Sandbox deploy
 1. `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe

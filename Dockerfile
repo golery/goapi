@@ -1,5 +1,5 @@
 # The node version should match with node version at your local
-FROM node:22.3.0-alpine as builder
+FROM node:22.3.0-alpine AS builder
 RUN npm install -g pm2 typescript
 
 WORKDIR /app/goapi2
