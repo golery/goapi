@@ -112,7 +112,7 @@ export class PencilService {
                     where: { id: node.parentId } as any,
                 });
                 const newParent = await nodeRepo.findOneOrFail({
-                    where: { id: newParentId },
+                    where: { id: newParentId, userId },
                 });
 
                 const validateNoLoop = async (
@@ -292,7 +292,7 @@ export class PencilService {
     async addNode(parentId: number, userId: string, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
         console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({
-            where: { id: parentId },
+            where: { id: parentId, userId },
         });
         if (!parent) {
             throw new BadRequestError(`Invalid parentId ${parentId}`);
