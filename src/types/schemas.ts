@@ -18,6 +18,9 @@ export interface SignInResponse {
     userId: number,
     token: string,
     email: string,
+    firstName?: string,
+    lastName?: string,
+    picture?: string,
     groupIds: number[],
 }
 
@@ -40,6 +43,9 @@ export const CreateGroupRequestSchema = z.object({
 export interface GetUserResponse {
     email: string,
     appId: number,
+    firstName?: string,
+    lastName?: string,
+    picture?: string,
     groupIds: number[],
 }
 

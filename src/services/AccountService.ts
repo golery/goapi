@@ -54,7 +54,7 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 export const signInGoogle = async (appId: number | undefined, idToken: string): Promise<SignInResponse> => {
     const tokenInfo = await getTokenInfo(idToken);
-    const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
+    const { aud, email, email_verified: emailVerified, expires_in: expiresIn, given_name, family_name, picture } = tokenInfo;
 
     if (!emailVerified) {
         throw new ServerError(400, 'Fail to sign in via Google: Email was not verified');
@@ -94,11 +94,31 @@ export const signInGoogle = async (appId: number | undefined, idToken: string): 
         user = new User();
         user.appId = effectiveAppId;
         user.email = email;
+        user.firstName = given_name;
+        user.lastName = family_name;
+        user.picture = picture;
         // no password
         user.passwordHash = undefined;
         await em.persistAndFlush(user);
         logger.info(`Created a new user ${user.id} via Google Sign In (appId=${effectiveAppId})`);
     } else {
+        // Update existing user's name and picture if not already set
+        let updated = false;
+        if (!user.firstName && given_name) {
+            user.firstName = given_name;
+            updated = true;
+        }
+        if (!user.lastName && family_name) {
+            user.lastName = family_name;
+            updated = true;
+        }
+        if (!user.picture && picture) {
+            user.picture = picture;
+            updated = true;
+        }
+        if (updated) {
+            await em.persistAndFlush(user);
+        }
         // it's possible that existing user was created with password
         logger.info(`Sign in with Google for an existing user ${user.id} (appId=${user.appId})`);
     }
@@ -106,7 +126,7 @@ export const signInGoogle = async (appId: number | undefined, idToken: string): 
 
     const groupIds = await findGroupIdsByUserId(user.id);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
+    return { appId: user.appId, userId: user.id, token, email: user.email, firstName: user.firstName, lastName: user.lastName, picture: user.picture, groupIds };
 };
 
 
@@ -198,6 +218,9 @@ export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
     return {
         email: user.email,
         appId: user.appId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        picture: user.picture,
         groupIds: groups.map((ug) => ug.groupId),
     };
 }

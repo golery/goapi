@@ -16,6 +16,9 @@
 {
   "token": "JWT_TOKEN",
   "email": "user@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "picture": "https://lh3.googleusercontent.com/...",
   "userId": <userId>,
   "appId": <appId>,
   "groupIds": [<groupId>]

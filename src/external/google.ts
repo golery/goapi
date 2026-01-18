@@ -1,7 +1,7 @@
 import axios from "axios";
 import logger from "../utils/logger";
 
-export async function getTokenInfo(idToken: string): Promise<{ aud: string, email: string, email_verified: boolean, expires_in: number }> {
+export async function getTokenInfo(idToken: string): Promise<{ aud: string, email: string, email_verified: boolean, expires_in: number, given_name?: string, family_name?: string, picture?: string }> {
     // https://cloud.google.com/docs/authentication/token-types
     const start = Date.now();
     try {
