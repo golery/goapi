@@ -1,7 +1,9 @@
 import { Node } from '../entity/Node';
+import { Book } from '../entity/Book';
 import { BadRequestError } from '../utils/exceptions';
-import { dataSource, bookRepo, nodeRepo } from './db';
-import { Repository } from 'typeorm';
+import { dataSource, bookRepo, nodeRepo, getEm, orm } from './db';
+import { Repository, In } from 'typeorm';
+import { NodeTag } from '../entity/NodeTag.entity';
 
 const APP_PENCIL = 1;
 
@@ -9,6 +11,11 @@ export interface CreateSpaceRequest {
     userId: string;
     name: string;
     code: string;
+}
+
+export interface UpdateNodeRequest extends Omit<Node, 'data'> {
+    tags?: string[];
+    data?: Record<string, any> | null;
 }
 
 const USER_ID = '1';
@@ -243,7 +250,29 @@ export class PencilService {
         return { book, node };
     }
 
-    async addNode(parentId: number, position: number = 0): Promise<Node> {
+    async deleteBook(bookId: number) {
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionNodeRepo = entityManager.getRepository(Node);
+            const transactionBookRepo = entityManager.getRepository(Book);
+            
+            // Delete all tags for all nodes in this book
+            // The column name is 'space' in the database (mapped to bookId in Node entity)
+            await entityManager.query(
+                'DELETE FROM node_tag WHERE node_id IN (SELECT id FROM node WHERE space = $1)',
+                [bookId]
+            );
+
+            // Delete all nodes in this book
+            await transactionNodeRepo.delete({ bookId });
+
+            // Delete the book itself
+            await transactionBookRepo.delete(bookId);
+            
+            return { success: true };
+        });
+    }
+
+    async addNode(parentId: number, position: number = 0, data?: Record<string, any> | null): Promise<Node> {
         console.log(`START.Add Node parentId=${parentId}, pos=${position}`);
         const parent = await nodeRepo.findOneOrFail({
             where: { id: parentId },
@@ -259,6 +288,7 @@ export class PencilService {
             app: APP_PENCIL,
             parentId: parentId,
             bookId: parent.bookId,
+            data: data || null,
         };
 
         const node = await nodeRepo.save(createNode);
@@ -275,15 +305,148 @@ export class PencilService {
         return node;
     }
 
-    async updateNode(node: Node): Promise<Node> {
+    async updateNode(node: UpdateNodeRequest): Promise<Node> {
         console.log(`Start upload node ${node.id}`);
-        const existing = await nodeRepo.findOneOrFail({
-            where: { id: node.id },
+        
+        // Extract tags and data from the request before deleting from node object
+        const tags = (node as any).tags;
+        const data = (node as any).data;
+        
+        // Wrap all operations in a transaction to ensure atomicity
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionNodeRepo = entityManager.getRepository(Node);
+            const existing = await transactionNodeRepo.findOneOrFail({
+                where: { id: node.id },
+            });
+            
+            // Handle tags update if provided
+            if (tags !== undefined) {
+                // Delete all existing tags for this node using raw SQL within transaction
+                await entityManager.query(
+                    'DELETE FROM node_tag WHERE node_id = $1',
+                    [node.id]
+                );
+                
+                // Insert new tags if any using raw SQL within transaction
+                if (tags && Array.isArray(tags) && tags.length > 0) {
+                    const values = tags.map((tag: string, index: number) => 
+                        `($${index * 2 + 1}, $${index * 2 + 2})`
+                    ).join(', ');
+                    const params = tags.flatMap((tag: string) => [node.id, tag]);
+                    await entityManager.query(
+                        `INSERT INTO node_tag (node_id, tag) VALUES ${values}`,
+                        params
+                    );
+                }
+            }
+            
+            // Clean up node object before saving
+            delete (node as any).userId;
+            delete (node as any).app;
+            delete (node as any).createTime;
+            delete (node as any).updateTime;
+            delete (node as any).tags;
+            delete (node as any).data;
+            
+            // Handle data field - if provided, use it; otherwise preserve existing
+            const dataToSave = data !== undefined ? data : existing.data;
+            
+            return await transactionNodeRepo.save({ ...existing, ...node, data: dataToSave });
         });
-        delete (node as any).userId;
-        delete (node as any).app;
-        delete (node as any).createTime;
-        delete (node as any).updateTime;
-        return await nodeRepo.save({ ...existing, ...node });
+    }
+
+    async findNodesByTags(tags: string[]): Promise<Node[]> {
+        if (!tags || tags.length === 0) {
+            return [];
+        }
+        
+        // For AND query: find nodes that have ALL of the given tags
+        // We'll group by nodeId and count distinct tags per node
+        // A node must have all tags, so count should equal tags.length
+        
+        const tagPlaceholders = tags.map((_, i) => `$${i + 1}`).join(',');
+        const query = `
+            SELECT node_id
+            FROM node_tag
+            WHERE tag IN (${tagPlaceholders})
+            GROUP BY node_id
+            HAVING COUNT(DISTINCT tag) = $${tags.length + 1}
+        `;
+        
+        const result = await dataSource.query(query, [...tags, tags.length]);
+        const nodeIds = result.map((row: any) => {
+            // Handle both snake_case and camelCase column names
+            const nodeId = row.node_id ?? row.nodeId;
+            return parseInt(String(nodeId));
+        }).filter((id: number) => !isNaN(id));
+        
+        if (nodeIds.length === 0) {
+            return [];
+        }
+        
+        return await nodeRepo.find({
+            where: { id: In(nodeIds) },
+        });
+    }
+
+    async getAllTags(): Promise<string[]> {
+        const query = `SELECT DISTINCT tag FROM node_tag ORDER BY tag`;
+        const result = await dataSource.query(query);
+        return result.map((row: any) => String(row.tag ?? row.TAG ?? '')).filter((tag: string) => tag.length > 0);
+    }
+
+    async getTagCounts(): Promise<Record<string, number>> {
+        const query = `
+            SELECT tag, COUNT(DISTINCT node_id) as count
+            FROM node_tag
+            GROUP BY tag
+            ORDER BY tag
+        `;
+        const result = await dataSource.query(query);
+        const counts: Record<string, number> = {};
+        result.forEach((row: any) => {
+            const tag = String(row.tag ?? row.TAG ?? '');
+            const count = parseInt(String(row.count ?? row.COUNT ?? '0'));
+            if (tag && !isNaN(count)) {
+                counts[tag] = count;
+            }
+        });
+        return counts;
+    }
+
+    async getNodeWithDescendants(nodeIdOrIds: number | number[], limit?: number): Promise<Node[]> {
+        const result: Map<number, Node> = new Map();
+        const queue = Array.isArray(nodeIdOrIds) ? [...nodeIdOrIds] : [nodeIdOrIds];
+        const visited = new Set<number>();
+
+        while (queue.length > 0) {
+            if (limit && result.size >= limit) {
+                break;
+            }
+
+            const currentBatch = queue.splice(0, limit ? limit - result.size : queue.length);
+            const nodes = await nodeRepo.find({
+                where: { id: In(currentBatch.filter(id => !visited.has(id))) }
+            });
+
+            for (const node of nodes) {
+                if (result.size >= (limit || Infinity)) break;
+                if (!visited.has(node.id)) {
+                    visited.add(node.id);
+                    result.set(node.id, node);
+                    if (node.children && node.children.length > 0) {
+                        queue.push(...node.children);
+                    }
+                }
+            }
+            
+            // To prevent infinite loop if some IDs in currentBatch were already visited or not found
+            if (nodes.length === 0 && queue.length > 0) {
+               // Mark all as visited to avoid re-processing
+               currentBatch.forEach(id => visited.add(id));
+            }
+        }
+        
+        return Array.from(result.values());
     }
 }

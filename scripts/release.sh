@@ -1,4 +1,6 @@
-# TODO: use verision number so that rollback is easier
+#!/bin/bash
+set -eo pipefail
+
 TIMESTAMP=$(date +'%Y%m%d%H%M%S')
 TAG=$TIMESTAMP
 docker tag golery/goapi:sandbox golery/goapi:$TAG

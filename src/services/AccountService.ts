@@ -1,5 +1,5 @@
 import { Group } from './../entity/Group.entity';
-import { ACCESS_TOKEN_EXPIRES_IN, GOOGLE_SIGN_IN_CLIENT_ID } from './../contants';
+import { ACCESS_TOKEN_EXPIRES_IN, AppIds, GOOGLE_SIGN_IN_CLIENT_ID, SSO_CLIENT_ID } from './../contants';
 import { CreateGroupResponse, GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
@@ -52,43 +52,85 @@ export function verifyAccessTokenInAuthorizationHeader(authorizationHeader?: str
 
 }
 
-export const signInGoogle = async (appId: number, accessToken: string): Promise<SignInResponse> => {
-    const tokenInfo = await getTokenInfo(accessToken);
-    const { aud, email, email_verified: emailVerified, expires_in: expiresIn } = tokenInfo;
-    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${appId}`]?.includes(aud)) {
-        logger.error('Token was generated for invalid clientId', { tokenInfo, appId });
-        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
-    }
+export const signInGoogle = async (appId: number | undefined, idToken: string): Promise<SignInResponse> => {
+    const tokenInfo = await getTokenInfo(idToken);
+    const { aud, email, email_verified: emailVerified, expires_in: expiresIn, given_name, family_name, picture } = tokenInfo;
+
     if (!emailVerified) {
         throw new ServerError(400, 'Fail to sign in via Google: Email was not verified');
     }
     if (expiresIn < 1) {
         throw new ServerError(400, 'Fail to sign in via Google: Token expired');
     }
-    logger.info('Retrieved token info from Google', tokenInfo);
+
     const em = getEm();
-    let user = await em.findOne(User, { email, appId });
+    let user = await em.findOne(User, { email }, { orderBy: { appId: 'ASC' } });
+
+    let effectiveAppId = user?.appId ?? appId;
+
+    if (effectiveAppId === undefined) {
+        // find appId from aud
+        for (const [id, clientIds] of Object.entries(GOOGLE_SIGN_IN_CLIENT_ID)) {
+            if (clientIds.includes(aud)) {
+                effectiveAppId = parseInt(id);
+                logger.info(`Inferred appId=${effectiveAppId} for user ${email} from token audience`);
+                break;
+            }
+        }
+    }
+
+    if (effectiveAppId === undefined) {
+        logger.error('Could not determine appId and token was generated for unknown clientId', { aud });
+        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID or appId missing');
+    }
+
+    if (!GOOGLE_SIGN_IN_CLIENT_ID[`${effectiveAppId}`]?.includes(aud) && !SSO_CLIENT_ID.includes(aud)) {
+        logger.error('Token was generated for invalid clientId', { appId: effectiveAppId, aud });
+        throw new ServerError(400, 'Fail to sign in via Google: Invalid clientID');
+    }
+
+    logger.info('Retrieved token info from Google', tokenInfo);
     if (!user) {
         user = new User();
-        user.appId = appId;
+        user.appId = effectiveAppId;
         user.email = email;
+        user.firstName = given_name;
+        user.lastName = family_name;
+        user.picture = picture;
         // no password
         user.passwordHash = undefined;
         await em.persistAndFlush(user);
-        logger.info(`Created a new user ${user.id} via Google Sign In`);
+        logger.info(`Created a new user ${user.id} via Google Sign In (appId=${effectiveAppId})`);
     } else {
+        // Update existing user's name and picture if not already set
+        let updated = false;
+        if (!user.firstName && given_name) {
+            user.firstName = given_name;
+            updated = true;
+        }
+        if (!user.lastName && family_name) {
+            user.lastName = family_name;
+            updated = true;
+        }
+        if (!user.picture && picture) {
+            user.picture = picture;
+            updated = true;
+        }
+        if (updated) {
+            await em.persistAndFlush(user);
+        }
         // it's possible that existing user was created with password
-        logger.info(`Sign in with Google for an existing user ${user.id}`);
+        logger.info(`Sign in with Google for an existing user ${user.id} (appId=${user.appId})`);
     }
     const token = createAccessToken(user);
 
     const groupIds = await findGroupIdsByUserId(user.id);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
+    return { appId: user.appId, userId: user.id, token, email: user.email, firstName: user.firstName, lastName: user.lastName, picture: user.picture, groupIds };
 };
 
 
-export const signup = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+export const signup = async (appIdInput: number | undefined, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
     logger.info(`Creating user with email ${email}`);
@@ -103,13 +145,13 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
         throw new ServerError(400, passwordValid);
     }
 
-    let user = await em.findOne(User, { email, appId });
+    let user = await em.findOne(User, { email });
     if (!!user && user.passwordHash !== undefined) {
         throw new ServerError(400, 'User already exists');
     }
     if (!user) {
         user = new User();
-        user.appId = appId;
+        user.appId = appIdInput ?? AppIds.SSO;
         user.email = email
     }
     user.password = password;
@@ -125,7 +167,7 @@ export const signup = async (appId: number, emailInput: string, passwordInput: s
 };
 
 
-export const signIn = async (appId: number, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
+export const signIn = async (appId: number | undefined, emailInput: string, passwordInput: string): Promise<SignInResponse> => {
     const email = emailInput.toLocaleLowerCase().trim();
     const password = passwordInput.trim();
 
@@ -134,7 +176,7 @@ export const signIn = async (appId: number, emailInput: string, passwordInput: s
     logger.info(`Login with email ${email} (superAdmin=${isSuperAdminPassword})`);
     const em = getEm();
 
-    const user = await em.findOne(User, { appId, email });
+    const user = await em.findOne(User, { email }, { orderBy: { appId: 'ASC' } });
     if (!user) {
         throw new ServerError(401, 'User is not found');
     }
@@ -176,6 +218,9 @@ export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
     return {
         email: user.email,
         appId: user.appId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        picture: user.picture,
         groupIds: groups.map((ug) => ug.groupId),
     };
 }

@@ -4,6 +4,9 @@ import { DataSource, Repository } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { Book } from '../entity/Book';
 import { Node } from '../entity/Node';
+import { BookmarkCollection } from '../entity/BookmarkCollection';
+import { Bookmark } from '../entity/Bookmark';
+import { BookmarkTag } from '../entity/BookmarkTag';
 import { EntityManager, MikroORM, ReflectMetadataProvider } from '@mikro-orm/core';
 import { Options, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
@@ -13,6 +16,9 @@ import { getSecrets, isDev } from './ConfigService';
 export let dataSource: DataSource;
 export let nodeRepo: Repository<Node>;
 export let bookRepo: Repository<Book>;
+export let bookmarkCollectionRepo: Repository<BookmarkCollection>;
+export let bookmarkRepo: Repository<Bookmark>;
+export let bookmarkTagRepo: Repository<BookmarkTag>;
 
 export let orm: MikroORM;
 export async function initMikroOrm() {
@@ -42,7 +48,12 @@ export async function initMikroOrm() {
 }
 
 export async function closeDb() {
-    await orm.close();
+    if (orm) {
+        await orm.close();
+    }
+    if (dataSource && dataSource.isInitialized) {
+        await dataSource.destroy();
+    }
 }
 export const initDb = async () => { 
     await initMikroOrm();
@@ -70,6 +81,9 @@ export const initDb = async () => {
 
     nodeRepo = dataSource.getRepository(Node);
     bookRepo = dataSource.getRepository(Book);
+    bookmarkCollectionRepo = dataSource.getRepository(BookmarkCollection);
+    bookmarkRepo = dataSource.getRepository(Bookmark);
+    bookmarkTagRepo = dataSource.getRepository(BookmarkTag);
 };
 
 export function getEm(): EntityManager {

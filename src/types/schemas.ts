@@ -1,13 +1,13 @@
 
 import { z } from 'zod';
 export const SignUpRequestSchema = z.object({
-    appId: z.number(),
+    appId: z.number().optional(),
     email: z.string(),
     password: z.string(),
 });
 
 export const SignInRequestSchema = z.object({
-    appId: z.number(),
+    appId: z.number().optional(),
     email: z.string(),
     password: z.string(),
 });
@@ -18,12 +18,15 @@ export interface SignInResponse {
     userId: number,
     token: string,
     email: string,
+    firstName?: string,
+    lastName?: string,
+    picture?: string,
     groupIds: number[],
 }
 
 export const SignInGoogleRequestSchema = z.object({
-    appId: z.number(),
-    accessToken: z.string(),    
+    appId: z.number().optional(),
+    idToken: z.string(),
 });
 
 export const SecretsSchema = z.object({
@@ -40,6 +43,9 @@ export const CreateGroupRequestSchema = z.object({
 export interface GetUserResponse {
     email: string,
     appId: number,
+    firstName?: string,
+    lastName?: string,
+    picture?: string,
     groupIds: number[],
 }
 
@@ -51,3 +57,16 @@ export interface CreateGroupResponse {
 export interface UploadFileResponse {
     key: string,
 }
+
+export const ChatMessageSchema = z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string(),
+});
+
+export const ChatRequestSchema = z.object({
+    question: z.string().min(1),
+    chatHistory: z.array(ChatMessageSchema).optional(),
+    nodeTree: z.array(z.number()).optional(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;

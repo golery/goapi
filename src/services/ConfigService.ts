@@ -19,7 +19,18 @@ let config: Config;
 export function loadConfig(): Config {
     const isProd = () => process.env.NODE_ENV === 'production';
 
+    // First, try to load from .env file in project root (if it exists)
+    const projectEnvPath = '.env';
+    if (fs.existsSync(projectEnvPath)) {
+        logger.info(`Load config from ${projectEnvPath}`);
+        const result = dotenv.config({ path: projectEnvPath });
+        if (result.error) {
+            logger.warn(`Failed to load config from ${projectEnvPath}: ${result.error.message}`);
+        }
+    }
+
     // On prod/env.sh is ONLY used at local to hook to prod DB. On real prod, we use environment variable in Koeyb
+    // This will override values from .env if both exist (dotenv.config() by default overrides existing vars)
     const dotEnvPath = `/workspaces/app-configs/goapi/${isProd() ? 'prod' : 'dev'}/env.sh`;
     if (fs.existsSync(dotEnvPath)) {
         logger.info(`Load config from ${dotEnvPath}`);

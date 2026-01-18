@@ -8,6 +8,8 @@ import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
+import { ChatRequestSchema } from '../types/schemas';
+import { BadRequestError } from '../utils/exceptions';
 
 /**
  * List of API examples.
@@ -36,6 +38,37 @@ export const getAuthenticatedRouter = (): Router => {
     );
 
     router.get(
+        '/pencil/node',
+        apiHandler(async (req, res) => {
+            const tagsParam = req.query.tags;
+            if (!tagsParam) {
+                return res.status(400).json({ error: 'tags query parameter is required' });
+            }
+            const tags = Array.isArray(tagsParam)
+                ? tagsParam.map(t => String(t))
+                : String(tagsParam).split(',').map(t => t.trim()).filter(t => t);
+            const nodes = await services().pencilService.findNodesByTags(tags);
+            res.json(nodes);
+        }),
+    );
+
+    router.get(
+        '/pencil/tags',
+        apiHandler(async (req, res) => {
+            const tags = await services().pencilService.getAllTags();
+            res.json(tags);
+        }),
+    );
+
+    router.get(
+        '/pencil/tags/count',
+        apiHandler(async (req, res) => {
+            const counts = await services().pencilService.getTagCounts();
+            res.json(counts);
+        }),
+    );
+
+    router.get(
         '/pencil/book',
         apiHandler(async (req, res) => {
             const books = await services().pencilService.getBooks();
@@ -48,6 +81,15 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req, res) => {
             const books = await services().pencilService.createBook(req.body);
             res.json(books);
+        }),
+    );
+    router.delete(
+        '/pencil/book/:bookId',
+        apiHandler(async (req, res) => {
+            const result = await services().pencilService.deleteBook(
+                parseInt(req.params.bookId),
+            );
+            res.json(result);
         }),
     );
 
@@ -65,9 +107,12 @@ export const getAuthenticatedRouter = (): Router => {
     router.post(
         '/pencil/add/:nodeId',
         apiHandler(async (req, res) => {
+            const position = req.body.position !== undefined ? parseInt(req.body.position) : 0;
+            const data = req.body.data;
             const node = await services().pencilService.addNode(
                 parseInt(req.params.nodeId),
-                parseInt(req.params.position),
+                position,
+                data,
             );
             res.json(node);
         }),
@@ -136,6 +181,91 @@ export const getAuthenticatedRouter = (): Router => {
     router.get('/user', apiHandler(async (req) => {
         return await getUserInfo(req.ctx);
     }));
+
+    router.post(
+        '/pencil/chat',
+        async (req, res, next) => {
+            try {
+                // Validate request body
+                const { question, chatHistory, nodeTree } = ChatRequestSchema.parse(req.body);
+
+                // Get nodes and descendants if nodeTree is provided
+                let nodes: Node[] = [];
+                if (nodeTree && nodeTree.length > 0) {
+                    nodes = await services().pencilService.getNodeWithDescendants(nodeTree, 20);
+                    if (nodes.length === 0) {
+                        return res.status(404).json({ error: 'Nodes not found' });
+                    }
+                }
+
+                // Check if chat service is configured
+                if (!process.env.GROQ_API_KEY) {
+                    return res.status(503).json({ error: 'Chat service not configured. GROQ_API_KEY is required.' });
+                }
+
+                // Set up SSE headers
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+
+                // Stream response from ChatService
+                const stream = services().chatService.streamChatResponse(
+                    question,
+                    nodes,
+                    chatHistory || [],
+                );
+
+                // Handle client disconnect
+                req.on('close', () => {
+                    logger.info('Client disconnected from chat stream');
+                });
+
+                // Stream chunks
+                for await (const chunk of stream) {
+                    res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+                }
+
+                // Send completion message
+                res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+                res.end();
+            } catch (error: any) {
+                logger.error('Error in chat endpoint', { error: error.message, stack: error.stack });
+                
+                if (error.name === 'ZodError') {
+                    return res.status(400).json({ error: 'Invalid request body', details: error.errors });
+                }
+                
+                if (error instanceof BadRequestError) {
+                    return res.status(400).json({ error: error.message });
+                }
+
+                // Check if it's an API key error
+                if (error.message && error.message.includes('Groq API key')) {
+                    return res.status(503).json({ error: 'Chat service not configured. GROQ_API_KEY is required.' });
+                }
+
+                // Handle 429 Rate Limit error
+                if (error.status === 429 || (error.message && error.message.includes('429'))) {
+                    if (!res.headersSent) {
+                        return res.status(429).json({ error: 'Groq API rate limit exceeded. Please try again later.' });
+                    } else {
+                        res.write(`data: ${JSON.stringify({ error: 'Rate limit exceeded' })}\n\n`);
+                        res.end();
+                        return;
+                    }
+                }
+
+                // For SSE, we need to send error as an event
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Internal server error' });
+                } else {
+                    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+                    res.end();
+                }
+            }
+        },
+    );
 
     return router;
 };

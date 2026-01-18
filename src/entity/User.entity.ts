@@ -19,6 +19,15 @@ export class User {
     @Property({ nullable: true })
     passwordHash?: string;
 
+    @Property({ nullable: true })
+    firstName?: string;
+
+    @Property({ nullable: true })
+    lastName?: string;
+
+    @Property({ nullable: true })
+    picture?: string;
+
     @Property()
     createdAt = new Date();
 
