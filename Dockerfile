@@ -1,18 +1,11 @@
-# The node version should match with node version at your local
-FROM node:22.3.0-alpine AS builder
-RUN npm install -g pm2 typescript
+# Using official Bun image
+FROM oven/bun:1
 
 WORKDIR /app/goapi2
-COPY package*.json ./
-RUN cat package.json
-RUN npm ci
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile --production
 
-COPY *.* ./
+COPY tsconfig.json ./
 COPY src src
-RUN ls src
 
-# Disable below during development of docker
-# The compile can be done by npm run watch-ts
-RUN npm run build
-
-CMD ["pm2-runtime", "start", "dist/server.js"]
+CMD ["bun", "src/server.ts"]
