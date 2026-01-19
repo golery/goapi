@@ -11,6 +11,7 @@ export interface CreateBookmarkRequest {
     description?: string;
     note?: string;
     tags?: string[];
+    previewImages?: string[];
 }
 
 export interface UpdateBookmarkRequest {
@@ -20,6 +21,7 @@ export interface UpdateBookmarkRequest {
     note?: string;
     tags?: string[];
     collectionId?: string | null;
+    previewImages?: string[];
 }
 
 export class BookmarkService {
@@ -66,6 +68,7 @@ export class BookmarkService {
             bookmark.name = request.name ?? null;
             bookmark.description = request.description ?? null;
             bookmark.note = request.note ?? null;
+            bookmark.data = { previewImages: request.previewImages || [] };
             bookmark.userId = userId;
 
             const savedBookmark = await manager.save(bookmark);
@@ -96,6 +99,9 @@ export class BookmarkService {
             if (request.name !== undefined) bookmark.name = request.name;
             if (request.description !== undefined) bookmark.description = request.description;
             if (request.note !== undefined) bookmark.note = request.note;
+            if (request.previewImages !== undefined) {
+                bookmark.data = { ...bookmark.data, previewImages: request.previewImages };
+            }
             if (request.collectionId !== undefined) {
                 if (request.collectionId !== null) {
                     // Validate new collection

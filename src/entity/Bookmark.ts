@@ -26,6 +26,12 @@ export class Bookmark {
     @Column({ type: 'text', nullable: true })
     note!: string | null;
 
+    @Column({ type: 'jsonb', default: {} })
+    data!: {
+        previewImages?: string[];
+        [key: string]: any;
+    };
+
     @Column({ name: 'user_id' })
     userId!: string;
 
