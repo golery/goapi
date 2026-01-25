@@ -1,0 +1,1 @@
+gcloud compute ssh --project=golery --zone=us-central1-c lyhoanghai@goapi-1 --command='docker logs --follow goapi'
