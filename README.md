@@ -108,6 +108,7 @@ Inside WSL ubuntu, run `docker login -u golery`
 2. Open google console: https://console.cloud.google.com/compute/instances?project=golery
    connect ssh web to node
    Run the command from step 1
+3. Log: ./scripts/gcloud-logs.sh   
 
 ## SECRETS and CONFIGURATION
 1. Store in app-configs, checked out in gcp node (gitlab)
