@@ -14,26 +14,26 @@ export const authMiddleware = (
     const authorizationHeader = req.header('Authorization');
 
     const groupId = parseIntOpt(req.header(GROUP_ID_HEADER));
-    
-    let appId = parseIntOpt(req.header(APP_ID_HEADER));        
+
+    let appId = parseIntOpt(req.header(APP_ID_HEADER));
 
     if (authorizationHeader !== undefined && authorizationHeader.startsWith(`Bearer ${MOCK_TOKEN}`)) {
         if (appId == undefined) {
             const appIdTxt = authorizationHeader.substring(`Bearer ${MOCK_TOKEN},appId=`.length);
             appId = parseIntOpt(appIdTxt);
-        }    
+        }
         Object.assign(req, { ctx: { userId: 1, appId, groupId, apiRequestId } });
         next();
         return;
-    } 
+    }
 
     if (authorizationHeader && authorizationHeader.startsWith('Bearer ')) {
-        const payload = verifyAccessTokenInAuthorizationHeader(authorizationHeader);    
+        const payload = verifyAccessTokenInAuthorizationHeader(authorizationHeader);
         if (!payload) {
             res.status(401).send('Invalid Authorization header');
             return;
         }
-        const ctx: Ctx = { appId: payload.appId, userId: payload.userId, groupId, apiRequestId};    
+        const ctx: Ctx = { appId: payload.appId, userId: payload.userId, groupId, apiRequestId };
         Object.assign(req, { ctx });
         next();
         return;

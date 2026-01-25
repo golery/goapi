@@ -57,6 +57,7 @@ const findSubTreeNodeIds = async (
                     );
                     return [];
                 }
+                return result;
             }),
         )
         : [];

@@ -18,13 +18,6 @@ import { Ctx } from '../types/context';
 
 export const MOCK_TOKEN = 'mock_token';
 
-// Deprecated, used by pencil service
-export const login = (username: string, password: string) => {
-    if (username === 'hly') {
-        return { token: MOCK_TOKEN };
-    }
-};
-
 interface JwtPayload {
     userId: number;
     appId: number;
