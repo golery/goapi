@@ -1,5 +1,5 @@
 import express from 'express';
-import { MOCK_TOKEN, verifyAccessTokenInAuthorizationHeader } from '../services/AccountService';
+import { DEV_TOKEN, verifyAccessTokenInAuthorizationHeader } from '../services/AccountService';
 import { APP_ID_HEADER, GROUP_ID_HEADER } from '../contants';
 import { Ctx } from '../types/context';
 import { parseIntOpt } from '../utils/parser';
@@ -17,12 +17,8 @@ export const authMiddleware = (
 
     let appId = parseIntOpt(req.header(APP_ID_HEADER));
 
-    if (authorizationHeader !== undefined && authorizationHeader.startsWith(`Bearer ${MOCK_TOKEN}`)) {
-        if (appId == undefined) {
-            const appIdTxt = authorizationHeader.substring(`Bearer ${MOCK_TOKEN},appId=`.length);
-            appId = parseIntOpt(appIdTxt);
-        }
-        Object.assign(req, { ctx: { userId: 1, appId, groupId, apiRequestId } });
+    if (authorizationHeader !== undefined && authorizationHeader.startsWith(`Bearer ${DEV_TOKEN}`)) {
+        Object.assign(req, { ctx: { userId: 1, appId: 1, groupId, apiRequestId } });
         next();
         return;
     }

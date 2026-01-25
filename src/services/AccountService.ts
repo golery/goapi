@@ -16,7 +16,9 @@ import { UserGroup } from '../entity/UserGroup.entity';
 import { findGroupIdsByUserId } from '../repositories/group';
 import { Ctx } from '../types/context';
 
-export const MOCK_TOKEN = 'mock_token';
+// DEV_TOKEN allow to access to dev user (DEV_USER_ID)
+export const DEV_TOKEN = 'dev_token_for_test_user';
+export const DEV_USER_ID = 2;
 
 interface JwtPayload {
     userId: number;
