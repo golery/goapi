@@ -84,6 +84,27 @@ export const getAuthenticatedRouter = (): Router => {
             res.json(books);
         }),
     );
+    router.put(
+        '/pencil/book/reorder',
+        apiHandler(async (req, res) => {
+            const books = await services().pencilService.reorderBooks(
+                req.ctx.userId.toString(),
+                req.body.ids,
+            );
+            res.json(books);
+        }),
+    );
+    router.patch(
+        '/pencil/book/:bookId',
+        apiHandler(async (req, res) => {
+            const book = await services().pencilService.updateBook(
+                parseInt(req.params.bookId),
+                req.ctx.userId.toString(),
+                req.body,
+            );
+            res.json(book);
+        }),
+    );
     router.delete(
         '/pencil/book/:bookId',
         apiHandler(async (req, res) => {

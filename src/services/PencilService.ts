@@ -1,6 +1,7 @@
 import { Node } from '../entity/Node';
 import { Book } from '../entity/Book';
 import { BadRequestError } from '../utils/exceptions';
+import { ServerError } from '../utils/errors';
 import { dataSource, bookRepo, nodeRepo, getEm, orm } from './db';
 import { Repository, In } from 'typeorm';
 import { NodeTag } from '../entity/NodeTag.entity';
@@ -11,6 +12,10 @@ export interface CreateSpaceRequest {
     userId: string;
     name: string;
     code: string;
+}
+
+export interface UpdateBookRequest {
+    name: string;
 }
 
 export interface UpdateNodeRequest extends Omit<Node, 'data'> {
@@ -244,6 +249,12 @@ export class PencilService {
             .from('space', 'space')
             .getRawOne();
 
+        const userBooks = await bookRepo.find({ where: { userId } });
+        const nextOrder = userBooks.reduce((max, book) => {
+            const order = typeof book.order === 'number' ? book.order : -1;
+            return Math.max(max, order);
+        }, -1) + 1;
+
         const node = await nodeRepo.save({
             id: nodeId,
             app: APP_PENCIL,
@@ -260,8 +271,71 @@ export class PencilService {
             rootId: node.id,
             userId,
             name: request.name,
+            order: nextOrder,
         });
         return { book, node };
+    }
+
+    async updateBook(bookId: number, userId: string, request: UpdateBookRequest) {
+        const name = request?.name?.trim();
+        if (!name) {
+            throw new ServerError(400, 'Book name is required');
+        }
+
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionBookRepo = entityManager.getRepository(Book);
+            const transactionNodeRepo = entityManager.getRepository(Node);
+
+            const book = await transactionBookRepo.findOne({ where: { id: bookId, userId } });
+            if (!book) {
+                throw new ServerError(404, 'Book not found');
+            }
+
+            book.name = name;
+            await transactionBookRepo.save(book);
+
+            if (book.rootId) {
+                const root = await transactionNodeRepo.findOne({ where: { id: book.rootId, userId } });
+                if (root) {
+                    root.name = name;
+                    root.title = name;
+                    await transactionNodeRepo.save(root);
+                }
+            }
+
+            return book;
+        });
+    }
+
+    async reorderBooks(userId: string, ids: number[]) {
+        if (!Array.isArray(ids)) {
+            throw new ServerError(400, 'ids must be an array');
+        }
+
+        const uniqueIds = [...new Set(ids.map((id) => Number(id)).filter((id) => !isNaN(id)))];
+        const books = await bookRepo.find({ where: { userId }, order: { order: 'ASC' } });
+        const bookById = new Map(books.map((book) => [book.id, book]));
+
+        const ordered: Book[] = [];
+        for (const id of uniqueIds) {
+            const book = bookById.get(id);
+            if (book) {
+                ordered.push(book);
+                bookById.delete(id);
+            }
+        }
+        for (const remaining of bookById.values()) {
+            ordered.push(remaining);
+        }
+
+        return await dataSource.transaction(async (entityManager) => {
+            const transactionBookRepo = entityManager.getRepository(Book);
+            for (let i = 0; i < ordered.length; i++) {
+                ordered[i].order = i;
+                await transactionBookRepo.save(ordered[i]);
+            }
+            return ordered;
+        });
     }
 
     async deleteBook(bookId: number, userId: string) {
