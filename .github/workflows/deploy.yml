@@ -1,0 +1,80 @@
+name: Deploy
+
+# Deploys goapi to the Compute Engine VM goapi-1 on every push to main.
+#
+# Required secrets in the GitHub environment named "production":
+#   DOCKERHUB_USERNAME  Docker Hub user that owns golery/goapi (golery)
+#   DOCKERHUB_TOKEN     Docker Hub access token with push permission
+#   GCP_SA_KEY          JSON key for a service account that can
+#                       `gcloud compute ssh` to goapi-1 (roles/compute.instanceAdmin.v1
+#                       on project golery is sufficient)
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-goapi-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            golery/goapi:${{ github.sha }}
+            golery/goapi:latest
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy on goapi-1
+        run: |
+          gcloud compute ssh lyhoanghai@goapi-1 \
+            --project=golery \
+            --zone=us-central1-c \
+            --quiet \
+            --strict-host-key-checking=no \
+            --command="TAG=${GITHUB_SHA} source /home/lyhoanghai/app-configs/scripts/run-goapi.sh"
+
+      - name: Check the new image is running
+        run: |
+          expected="golery/goapi:${GITHUB_SHA}"
+          for i in $(seq 1 30); do
+            running=$(gcloud compute ssh lyhoanghai@goapi-1 \
+              --project=golery \
+              --zone=us-central1-c \
+              --quiet \
+              --strict-host-key-checking=no \
+              --command="docker inspect --format='{{.Config.Image}}' goapi" \
+              | tr -d '\r')
+            if [ "$running" = "$expected" ] && curl -fsS --max-time 5 http://goapi.golery.com:8200/ | grep -q ping; then
+              echo "goapi is serving $expected"
+              exit 0
+            fi
+            echo "waiting for $expected (running: ${running:-none}) ($i/30)"
+            sleep 5
+          done
+          echo "goapi did not come up on $expected"
+          exit 1
