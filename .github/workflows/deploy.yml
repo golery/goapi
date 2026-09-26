@@ -50,13 +50,9 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy on goapi-1
-        run: |
-          gcloud compute ssh lyhoanghai@goapi-1 \
-            --project=golery \
-            --zone=us-central1-c \
-            --quiet \
-            --strict-host-key-checking=no \
-            --command="TAG=${GITHUB_SHA} source /home/lyhoanghai/app-configs/scripts/run-goapi.sh"
+        env:
+          TAG: ${{ github.sha }}
+        run: ./scripts/gcloud-deploy-remote.sh
 
       - name: Check the new image is running
         run: |

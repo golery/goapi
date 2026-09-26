@@ -50,7 +50,7 @@ The VM user and script are unchanged from manual release:
 
 - Instance: `goapi-1`, zone `us-central1-c`, project `golery`
 - SSH user: `lyhoanghai`
-- Deploy: `TAG=<git-sha> source /home/lyhoanghai/app-configs/scripts/run-goapi.sh`
+- Deploy: `./scripts/gcloud-deploy-remote.sh` pipes [scripts/run-goapi.sh](../scripts/run-goapi.sh) over SSH (includes `docker rm` after stop). Copy that file to `~/app-configs/scripts/run-goapi.sh` on the VM if you deploy manually over SSH.
 
 OS Login / IAM must allow the service account (or the account you use) to SSH as that user. If manual `gcloud compute ssh` works for you but Actions fails, compare which principal is used and fix IAM or firewall rules for GitHub’s runners.
 
