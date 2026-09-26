@@ -93,6 +93,15 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 5. Migration: run manually script in migrations folder   
 
 # RELEASE PROCEDURE
+
+## Automatic deploy (GitHub Actions)
+
+Every push to **`main`** runs the **Deploy** workflow: build image → push `golery/goapi:<commit-sha>` → SSH to `goapi-1` → run `run-goapi.sh`.
+
+**One-time setup:** configure environment secrets for **`production`** (Docker Hub + GCP). See [docs/github-actions-setup.md](docs/github-actions-setup.md).
+
+## Manual deploy
+
 Run docker from Windows host machine
 Inside WSL ubuntu, run `docker login -u golery`
 
@@ -101,11 +110,12 @@ Inside WSL ubuntu, run `docker login -u golery`
    Install https://www.koyeb.com/docs/build-and-deploy/cli/installation
    koyeb login
 
-## Production deploy
+## Production deploy (manual)
 1. (needs deploy-sandbox.sh) `./scripts/release.sh`:  
    It will create a tag for docker image and output a command to run in GCP
    ex: TAG=20240922180503 source /home/lyhoanghai/app-configs/scripts/run-goapi.sh
-2. Open google console: https://console.cloud.google.com/compute/instances?project=golery
+2. Or rely on CI after merging to `main` (image tag is the git commit SHA).
+3. Fallback: open google console: https://console.cloud.google.com/compute/instances?project=golery
    connect ssh web to node
    Run the command from step 1
 
