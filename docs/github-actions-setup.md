@@ -71,7 +71,6 @@ Alternatives:
 | `unauthorized` on Docker login | Wrong `DOCKERHUB_USERNAME` or expired token |
 | SSH / `gcloud compute ssh` fails in Actions | Bad `GCP_SA_KEY`, missing IAM role, or VM firewall blocking SSH from the internet |
 | Deploy step succeeds but health check fails | `run-goapi.sh` on the VM must pull `golery/goapi:$GITHUB_SHA`; check `docker logs goapi` on the VM |
-| `no space left on device` during `docker pull` | VM boot disk full of old images. SSH in and run `docker system prune -af`, or re-run deploy after merging the prune step in `scripts/run-goapi.sh` |
 | Secrets not found | Secrets must be under environment **`production`**, not only repository secrets |
 
 ## Manual deploy (unchanged)
