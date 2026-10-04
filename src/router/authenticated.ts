@@ -15,6 +15,7 @@ import {
 } from '../services/GroupService';
 import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
+import { acceptLegal, clientIp } from '../services/LegalService';
 import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
@@ -246,6 +247,10 @@ export const getAuthenticatedRouter = (): Router => {
 
     router.get('/user', apiHandler(async (req) => {
         return await getUserInfo(req.ctx);
+    }));
+
+    router.post('/legal/accept', apiHandler(async (req) => {
+        return acceptLegal(req.ctx, req.body, clientIp(req));
     }));
 
     router.post(

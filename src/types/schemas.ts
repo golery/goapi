@@ -75,6 +75,21 @@ export const ChatMessageSchema = z.object({
     content: z.string(),
 });
 
+const httpUrl = z.string().trim().max(2000).refine((value) => {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}, 'Must be an http(s) URL');
+
+export const AcceptLegalRequestSchema = z.object({
+    app: z.string().trim().min(1).max(64),
+    terms: httpUrl,
+    privacy: httpUrl,
+});
+
 export const ChatRequestSchema = z.object({
     question: z.string().min(1),
     chatHistory: z.array(ChatMessageSchema).optional(),
