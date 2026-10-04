@@ -106,7 +106,7 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 
 ## Automatic deploy (GitHub Actions)
 
-Run script scripts/merge-main.sh or open a pull request in Github.
+Run script scripts/merge-prod.sh or open a pull request in Github.
 Check deployment progress at url [https://github.com/golery/goapi/actions/workflows/deploy.yml]
 
 More details:
