@@ -32,6 +32,17 @@ describe('router/groups', () => {
         return { userId: user.id, appId: AppIds.TEST, token: createAccessToken(user) };
     }
 
+    it('creates Personal when listing groups with no membership', async () => {
+        const testUser = await setupUser();
+        const listed = await sendRequest<{ groups: { id: number; name: string; role: string }[] }>(
+            testUser,
+            request(app).get('/api/groups'),
+        );
+        assert.equal(listed.groups.length, 1);
+        assert.equal(listed.groups[0].name, 'Personal');
+        assert.equal(listed.groups[0].role, 'owner');
+    });
+
     it('creates a group and lists it as owner', async () => {
         const testUser = await setupUser();
         const created = await sendRequest<{ group: { id: number; name: string; role: string } }>(

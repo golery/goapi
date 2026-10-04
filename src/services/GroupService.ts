@@ -10,6 +10,7 @@ const INVITE_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const INVITE_CODE_LENGTH = 6;
 const INVITE_TTL_MS = 2 * 60 * 60 * 1000;
 const GROUP_NAME_MAX = 60;
+export const DEFAULT_GROUP_NAME = 'Personal';
 
 export function displayNameFromEmail(email: string): string {
     const at = email.indexOf('@');
@@ -100,7 +101,27 @@ function memberJson(user: User, role: MembershipRole) {
     };
 }
 
+export async function ensurePersonalGroup(ctx: Ctx): Promise<void> {
+    const em = getEm();
+    const membershipCount = await em.count(UserGroup, { userId: ctx.userId });
+    if (membershipCount > 0) {
+        return;
+    }
+
+    const group = new Group();
+    group.appId = ctx.appId;
+    group.name = DEFAULT_GROUP_NAME;
+    await em.persist(group);
+
+    const membership = new UserGroup();
+    membership.userId = ctx.userId;
+    membership.groupId = group.id;
+    membership.role = 'owner';
+    await em.persistAndFlush(membership);
+}
+
 export async function listGroups(ctx: Ctx) {
+    await ensurePersonalGroup(ctx);
     const em = getEm();
     const memberships = await em.find(UserGroup, { userId: ctx.userId }, { orderBy: { groupId: 'ASC' } });
     const groups: { id: number; name: string | null; role: MembershipRole }[] = [];

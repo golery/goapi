@@ -13,6 +13,7 @@ import axios from 'axios';
 import { getTokenInfo } from '../external/google';
 import { UserGroup } from '../entity/UserGroup.entity';
 import { findGroupIdsByUserId } from '../repositories/group';
+import { ensurePersonalGroup } from './GroupService';
 import { Ctx } from '../types/context';
 
 export const MOCK_TOKEN = 'mock_token';
@@ -123,6 +124,7 @@ export const signInGoogle = async (appId: number | undefined, idToken: string): 
     }
     const token = createAccessToken(user);
 
+    await ensurePersonalGroup({ appId: user.appId, userId: user.id });
     const groupIds = await findGroupIdsByUserId(user.id);
 
     return { appId: user.appId, userId: user.id, token, email: user.email, firstName: user.firstName, lastName: user.lastName, picture: user.picture, groupIds };
@@ -160,6 +162,7 @@ export const signup = async (appIdInput: number | undefined, emailInput: string,
     const token = createAccessToken(user);
     logger.info(`Created user ${user.id}`);
 
+    await ensurePersonalGroup({ appId: user.appId, userId: user.id });
     const groupIds = await findGroupIdsByUserId(user.id);
 
     return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
@@ -190,6 +193,7 @@ export const signIn = async (appId: number | undefined, emailInput: string, pass
     logger.info(`Login with user ${user.id}`);
     const token = createAccessToken(user);
 
+    await ensurePersonalGroup({ appId: user.appId, userId: user.id });
     const groupIds = await findGroupIdsByUserId(user.id);
 
     return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
@@ -197,6 +201,7 @@ export const signIn = async (appId: number | undefined, emailInput: string, pass
 
 
 export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
+    await ensurePersonalGroup(ctx);
     const em = getEm();
     const user = await em.findOneOrFail(User, { id: ctx.userId });
     const groups = await em.find(UserGroup, { userId: ctx.userId });
