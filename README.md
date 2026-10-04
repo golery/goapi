@@ -85,12 +85,14 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 
 
 # DATABASE
-1. It's in supabase. Login via github personal account or golery.team@gmail.com(with password)
-2. Database is Prod. It's not visible in the UI of supabase.
-3. Credential is stored in bitwarden/Golery/Supabse DB Credential (or in GCP env variables).
-4. Connecting with DBVisualizer/Data grip from Windows Host machine to localhost
-   localhost portforward is turned on by default for WSL
-5. Migration: run manually script in migrations folder   
+1. Both prod and dev are in supabase. 
+   Login via github personal account or golery.team@gmail.com(with password)
+   Database is Prod. It's not visible in the UI of supabase.
+   Credential is stored in bitwarden/Golery/Supabse DB Credential (or in GCP env variables).
+   Connecting with from DBeaver Window
+4. Connecting with from DBeaver Windows (C:\apps\dbeaver)
+   Credential is in aws-config repos for both dev and prod.
+5. Migration: run manually script in migrations folder      
 
 # RELEASE PROCEDURE
 

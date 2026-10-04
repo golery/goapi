@@ -51,29 +51,29 @@ describe('router/legal', () => {
         return { status: response.status, body: json };
     }
 
-    it('records acceptance with user, app, urls, and ip', async () => {
+    it('records acceptance with user, app id, urls, and ip', async () => {
         const testUser = await setupUser();
         const payload = {
-            app: 'stocky',
             terms: 'https://example.com/terms',
             privacy: 'https://example.com/privacy',
         };
         const saved = await postAccept(testUser, payload, {
             'x-forwarded-for': '203.0.113.10, 10.0.0.1',
+            appId: `${testUser.appId}`,
         });
 
         assert.equal(saved.status, 200);
         const body = saved.body as {
             id: number;
             userId: number;
-            app: string;
+            appId: number;
             terms: string;
             privacy: string;
             ipAddress: string;
             acceptedAt: string;
         };
         assert.equal(body.userId, testUser.userId);
-        assert.equal(body.app, payload.app);
+        assert.equal(body.appId, testUser.appId);
         assert.equal(body.terms, payload.terms);
         assert.equal(body.privacy, payload.privacy);
         assert.equal(body.ipAddress, '203.0.113.10');
@@ -81,19 +81,19 @@ describe('router/legal', () => {
 
         const row = await getEm().fork().findOne(LegalAcceptance, { id: body.id });
         assert.equal(row?.userId, testUser.userId);
+        assert.equal(row?.appId, testUser.appId);
         assert.equal(row?.ipAddress, '203.0.113.10');
         await getEm().fork().nativeDelete(LegalAcceptance, { id: body.id });
     });
 
     it('rejects a body without document urls', async () => {
         const testUser = await setupUser();
-        const saved = await postAccept(testUser, { app: 'stocky' });
+        const saved = await postAccept(testUser, {}, { appId: `${testUser.appId}` });
         assert.equal(saved.status, 400);
     });
 
     it('requires authentication', async () => {
         const saved = await postAccept(undefined, {
-            app: 'stocky',
             terms: 'https://example.com/terms',
             privacy: 'https://example.com/privacy',
         });

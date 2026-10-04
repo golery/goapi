@@ -9,7 +9,7 @@ export class LegalAcceptance {
     userId!: number;
 
     @Property()
-    app!: string;
+    appId!: number;
 
     @Property()
     terms!: string;

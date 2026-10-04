@@ -28,13 +28,16 @@ export async function acceptLegal(ctx: Ctx, body: unknown, ipAddress: string) {
     if (!parsed.success) {
         throw new ServerError(400, 'Invalid request');
     }
+    if (ctx.appId === undefined || ctx.appId === null) {
+        throw new ServerError(400, 'appId is required');
+    }
     if (!ipAddress) {
         throw new ServerError(400, 'IP address is required');
     }
 
     const row = new LegalAcceptance();
     row.userId = ctx.userId;
-    row.app = parsed.data.app;
+    row.appId = ctx.appId;
     row.terms = parsed.data.terms;
     row.privacy = parsed.data.privacy;
     row.ipAddress = ipAddress;
@@ -45,7 +48,7 @@ export async function acceptLegal(ctx: Ctx, body: unknown, ipAddress: string) {
     return {
         id: row.id,
         userId: row.userId,
-        app: row.app,
+        appId: row.appId,
         terms: row.terms,
         privacy: row.privacy,
         ipAddress: row.ipAddress,

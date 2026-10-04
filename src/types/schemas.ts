@@ -85,7 +85,6 @@ const httpUrl = z.string().trim().max(2000).refine((value) => {
 }, 'Must be an http(s) URL');
 
 export const AcceptLegalRequestSchema = z.object({
-    app: z.string().trim().min(1).max(64),
     terms: httpUrl,
     privacy: httpUrl,
 });

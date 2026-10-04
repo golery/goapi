@@ -1,6 +1,6 @@
 # Accept terms and privacy
 
-A signed-in user records that they accepted the terms and privacy documents shown to them. Each call inserts a new row. The server sets the user, the time, and the client IP.
+A signed-in user records that they accepted the terms and privacy documents shown to them. Each call inserts a new row. The server sets the user, app id (from the access token), the time, and the client IP.
 
 - **Method**: `POST`
 - **Path**: `/api/legal/accept`
@@ -10,13 +10,12 @@ A signed-in user records that they accepted the terms and privacy documents show
 
 ```json
 {
-  "app": "stocky",
   "terms": "https://example.com/terms",
   "privacy": "https://example.com/privacy"
 }
 ```
 
-`app` is the product name shown to the user. `terms` and `privacy` are the http(s) URLs of the documents presented at acceptance time.
+`terms` and `privacy` are the http(s) URLs of the documents presented at acceptance time. The app is taken from the token (`appId` on the user / JWT), not from the body.
 
 ## Response
 
@@ -24,7 +23,7 @@ A signed-in user records that they accepted the terms and privacy documents show
 {
   "id": 1,
   "userId": 12,
-  "app": "stocky",
+  "appId": 2,
   "terms": "https://example.com/terms",
   "privacy": "https://example.com/privacy",
   "ipAddress": "203.0.113.10",
