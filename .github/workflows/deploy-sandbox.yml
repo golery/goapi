@@ -15,6 +15,9 @@ concurrency:
   group: deploy-goapi-sandbox
   cancel-in-progress: false
 
+env:
+  SANDBOX_URL: https://sandbox-api-golery.koyeb.app/
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -43,11 +46,26 @@ jobs:
 
       - name: Redeploy on Koyeb
         run: |
-          sleep 5
           koyeb apps resume goapi-sandbox || echo "App not paused; skipping resume"
-          koyeb services redeploy goapi-sandbox/main
+          koyeb services redeploy goapi-sandbox/main --wait --wait-timeout 5m
 
-      - name: Show recent service logs
+      - name: Verify sandbox responds
         run: |
-          TIMESTAMP=$(date -u -d "-1 minute" "+%Y-%m-%d %H:%M:%S")
-          koyeb services logs goapi-sandbox/main --since "$TIMESTAMP +0000 UTC"
+          url="${SANDBOX_URL}"
+          deadline=$((SECONDS + 180))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            if curl -fsS --max-time 5 "$url" | grep -q ping; then
+              echo "Sandbox is serving ping at $url"
+              exit 0
+            fi
+            echo "waiting for $url ($((deadline - SECONDS))s left)"
+            sleep 5
+          done
+          echo "Sandbox did not respond with ping at $url within 3 minutes"
+          end_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          start_time=$(date -u -d "-15 minutes" +"%Y-%m-%dT%H:%M:%SZ")
+          echo "=== Runtime logs (last 15m) ==="
+          koyeb services logs goapi-sandbox/main --start-time "$start_time" --end-time "$end_time" || true
+          echo "=== Build logs (last 15m) ==="
+          koyeb services logs goapi-sandbox/main -t build --start-time "$start_time" --end-time "$end_time" || true
+          exit 1
