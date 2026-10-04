@@ -1,0 +1,54 @@
+name: Deploy Sandbox
+
+# Builds golery/goapi:sandbox, pushes to Docker Hub, and redeploys Koyeb app goapi-sandbox.
+# Trigger manually from Actions → Deploy Sandbox → Run workflow.
+#
+# Required secrets in the GitHub environment named "sandbox":
+#   DOCKERHUB_USERNAME  Docker Hub user that owns golery/goapi (golery)
+#   DOCKERHUB_TOKEN     Docker Hub access token with push permission
+#   KOYEB_API_TOKEN     Koyeb API token (https://app.koyeb.com/settings/api)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-goapi-sandbox
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment: sandbox
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push sandbox image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: golery/goapi:sandbox
+
+      - name: Install and configure Koyeb CLI
+        uses: koyeb-community/koyeb-actions@v2
+        with:
+          api_token: ${{ secrets.KOYEB_API_TOKEN }}
+
+      - name: Redeploy on Koyeb
+        run: |
+          sleep 5
+          koyeb apps resume goapi-sandbox
+          koyeb services redeploy goapi-sandbox/main
+
+      - name: Show recent service logs
+        run: |
+          TIMESTAMP=$(date -u -d "-1 minute" "+%Y-%m-%d %H:%M:%S")
+          koyeb services logs goapi-sandbox/main --since "$TIMESTAMP +0000 UTC"
