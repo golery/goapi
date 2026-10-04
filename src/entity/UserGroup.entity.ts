@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
-import * as uuid from 'uuid';
 
-// Table name must be in plural because user is a keyword in postgres
+export type MembershipRole = 'owner' | 'staff';
+
 @Entity({ tableName: 'user_group' })
 export class UserGroup {
     @PrimaryKey()
@@ -9,4 +9,7 @@ export class UserGroup {
 
     @PrimaryKey()
     groupId!: number;
+
+    @Property({ default: 'owner' })
+    role: MembershipRole = 'owner';
 }

@@ -1,6 +1,5 @@
-import { Group } from './../entity/Group.entity';
 import { ACCESS_TOKEN_EXPIRES_IN, AppIds, GOOGLE_SIGN_IN_CLIENT_ID, SSO_CLIENT_ID } from './../contants';
-import { CreateGroupResponse, GetUserResponse, SignInResponse } from './../types/schemas';
+import { GetUserResponse, SignInResponse } from './../types/schemas';
 import { User } from '../entity/User.entity';
 import { getEm, orm } from './db';
 import * as bcrypt from 'bcrypt';
@@ -196,19 +195,6 @@ export const signIn = async (appId: number | undefined, emailInput: string, pass
     return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
 };
 
-
-export async function createGroup(ctx: Ctx): Promise<CreateGroupResponse> {
-    const em = getEm();
-    const group = new Group();
-    Object.assign(group, { appId: ctx.appId, userId: ctx.userId });
-    await em.persistAndFlush(group);
-
-    const userGroup = new UserGroup();
-    Object.assign(userGroup, { userId: ctx.userId, groupId: group.id });
-    await em.persistAndFlush(userGroup);
-
-    return { id: group.id, appId: group.appId };
-}
 
 export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
     const em = getEm();

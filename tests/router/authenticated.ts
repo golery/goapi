@@ -9,7 +9,7 @@ import { assert } from 'chai';
 import { getTestEm, sendRequest, setupUser } from '../testutils/setup';
 import * as _ from 'lodash';
 import { getRandomInt } from '../testutils/random';
-import { CreateGroupResponse, GetUserResponse, UploadFileResponse } from '../../src/types/schemas';
+import { GetUserResponse, UploadFileResponse } from '../../src/types/schemas';
 import * as fs from 'fs'
 import * as path from 'path'
 import { File } from '../../src/entity/File.entity';
@@ -39,16 +39,14 @@ describe('router/authenticated', () => {
     describe('group', () => {
         it('#it.create group then get user info', async () => {
             const testUser = await setupUser();
-            // Given a user create a group
-            const group: CreateGroupResponse = await sendRequest(testUser, request(app)
-                .post('/api/group')
-            );
-            assert.equal(group.appId, AppIds.TEST);
+            const group: { group: { id: number } } = await sendRequest(testUser, request(app)
+                .post('/api/groups')
+                .send({ name: 'Test shop' }));
+            assert.equal(group.group.id > 0, true);
 
-            // Then that group is associated with the user 
             const userInfo: GetUserResponse = await sendRequest(testUser, request(app)
                 .get('/api/user'));
-            assert.deepEqual(userInfo.groupIds, [group.id]);
+            assert.deepEqual(userInfo.groupIds, [group.group.id]);
         });
     });
 

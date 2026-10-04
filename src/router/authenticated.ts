@@ -1,14 +1,25 @@
 import express, { Router } from 'express';
 import { Node } from '../entity/Node';
 import { authMiddleware } from '../middlewares/AuthMiddleware';
-import { createGroup, getUserInfo } from '../services/AccountService';
+import { getUserInfo } from '../services/AccountService';
+import {
+    createGroup,
+    createInvite,
+    deleteMember,
+    getPeople,
+    joinGroup,
+    listGroups,
+    patchMemberRole,
+    renameGroup,
+    revokeInvite,
+} from '../services/GroupService';
 import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
 import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
-import { ChatRequestSchema } from '../types/schemas';
+import { ChatRequestSchema, CreateGroupRequestSchema, JoinGroupRequestSchema, PatchGroupRequestSchema, PatchMemberRoleRequestSchema } from '../types/schemas';
 import { BadRequestError } from '../utils/exceptions';
 
 /**
@@ -201,8 +212,36 @@ export const getAuthenticatedRouter = (): Router => {
         }),
     );
 
-    router.post('/group', apiHandler(async (req) => {
-        return await createGroup(req.ctx);
+    router.get('/groups', apiHandler(async (req) => listGroups(req.ctx)));
+
+    router.post('/groups/join', apiHandler(async (req) => {
+        const { code } = JoinGroupRequestSchema.parse(req.body);
+        return joinGroup(req.ctx, code);
+    }));
+
+    router.post('/groups', apiHandler(async (req) => {
+        const { name } = CreateGroupRequestSchema.parse(req.body);
+        return createGroup(req.ctx, name);
+    }));
+
+    router.patch('/groups/:groupId', apiHandler(async (req) => {
+        const { name } = PatchGroupRequestSchema.parse(req.body);
+        return renameGroup(req.ctx, req.params.groupId, name);
+    }));
+
+    router.get('/groups/:groupId/people', apiHandler(async (req) => getPeople(req.ctx, req.params.groupId)));
+
+    router.post('/groups/:groupId/invites', apiHandler(async (req) => createInvite(req.ctx, req.params.groupId)));
+
+    router.delete('/groups/:groupId/invites/:code', apiHandler(async (req) =>
+        revokeInvite(req.ctx, req.params.groupId, req.params.code)));
+
+    router.delete('/groups/:groupId/members/:userId', apiHandler(async (req) =>
+        deleteMember(req.ctx, req.params.groupId, req.params.userId)));
+
+    router.patch('/groups/:groupId/members/:userId', apiHandler(async (req) => {
+        const { role } = PatchMemberRoleRequestSchema.parse(req.body);
+        return patchMemberRole(req.ctx, req.params.groupId, req.params.userId, role);
     }));
 
     router.get('/user', apiHandler(async (req) => {

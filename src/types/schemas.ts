@@ -36,7 +36,19 @@ export const SecretsSchema = z.object({
 });
 
 export const CreateGroupRequestSchema = z.object({
-    appId: z.number(),
+    name: z.string(),
+});
+
+export const PatchGroupRequestSchema = z.object({
+    name: z.string(),
+});
+
+export const JoinGroupRequestSchema = z.object({
+    code: z.string(),
+});
+
+export const PatchMemberRoleRequestSchema = z.object({
+    role: z.enum(['owner', 'staff']),
 });
 
 
