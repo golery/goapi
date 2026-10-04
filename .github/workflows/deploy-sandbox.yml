@@ -3,7 +3,7 @@ name: Deploy Sandbox
 # Builds golery/goapi:sandbox, pushes to Docker Hub, and redeploys Koyeb app goapi-sandbox.
 # Trigger manually from Actions → Deploy Sandbox → Run workflow.
 #
-# Required secrets in the GitHub environment named "sandbox":
+# Required repository secrets:
 #   DOCKERHUB_USERNAME  Docker Hub user that owns golery/goapi (golery)
 #   DOCKERHUB_TOKEN     Docker Hub access token with push permission
 #   KOYEB_API_TOKEN     Koyeb API token (https://app.koyeb.com/settings/api)
@@ -17,7 +17,6 @@ concurrency:
 
 jobs:
   deploy:
-    environment: sandbox
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,7 +44,7 @@ jobs:
       - name: Redeploy on Koyeb
         run: |
           sleep 5
-          koyeb apps resume goapi-sandbox
+          koyeb apps resume goapi-sandbox || echo "App not paused; skipping resume"
           koyeb services redeploy goapi-sandbox/main
 
       - name: Show recent service logs

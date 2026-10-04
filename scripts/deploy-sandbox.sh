@@ -9,7 +9,7 @@ docker push golery/goapi:sandbox
 sleep 5
 
 echo "Redeploy to koyeb"
-koyeb apps resume goapi-sandbox
+koyeb apps resume goapi-sandbox || echo "App not paused; skipping resume"
 koyeb services redeploy goapi-sandbox/main
 TIMESTAMP=$(date -u -d "-1 minute" "+%Y-%m-%d %H:%M:%S")
 koyeb services logs goapi-sandbox/main --since "$TIMESTAMP +0000 UTC"

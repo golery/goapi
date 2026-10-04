@@ -111,7 +111,8 @@ Run docker from Windows host machine
 Inside WSL ubuntu, run `docker login -u golery`
 
 ## Sandbox deploy
-1. `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe
+1. Run github action deploy-sandbox.
+2. Manual: `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe
    Install https://www.koyeb.com/docs/build-and-deploy/cli/installation
    koyeb login
 
