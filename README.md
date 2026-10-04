@@ -98,6 +98,8 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 
 ## Automatic deploy (GitHub Actions)
 
+Run script scripts/merge-main.sh or open a pull request in Github.
+
 Every push to **`main`** runs the **Deploy** workflow: build image → push `golery/goapi:<commit-sha>` → SSH to `goapi-1` → run `run-goapi.sh`.
 
 **One-time setup:** configure environment secrets for **`production`** (Docker Hub + GCP). See [docs/github-actions-setup.md](docs/github-actions-setup.md).
