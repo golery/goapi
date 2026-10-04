@@ -20,6 +20,11 @@ export const getApiRouter = (): Router => {
     router.use('/', getAuthenticatedRouter());
 
     router.use('/ops', getOpsRouter());
+
+    router.use((_req, res) => {
+        res.status(404).json({ code: 404, message: 'Not found' });
+    });
+
     return router;
 };
  

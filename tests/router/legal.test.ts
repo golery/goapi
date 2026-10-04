@@ -31,6 +31,24 @@ describe('router/legal', () => {
         await closeDb();
     });
 
+    async function getAcceptance(user: TestUser | undefined, headers: Record<string, string> = {}) {
+        const response = await fetch(`${base}/api/legal/acceptance`, {
+            method: 'GET',
+            headers: {
+                ...(user ? { authorization: `Bearer ${user.token}` } : {}),
+                ...headers,
+            },
+        });
+        const text = await response.text();
+        let json: unknown = text;
+        try {
+            json = JSON.parse(text);
+        } catch {
+            // auth failures are plain text
+        }
+        return { status: response.status, body: json };
+    }
+
     async function postAccept(user: TestUser | undefined, body: unknown, headers: Record<string, string> = {}) {
         const response = await fetch(`${base}/api/legal/accept`, {
             method: 'POST',
@@ -98,5 +116,50 @@ describe('router/legal', () => {
             privacy: 'https://example.com/privacy',
         });
         assert.equal(saved.status, 401);
+    });
+
+    it('returns the latest acceptance for the signed-in user', async () => {
+        const testUser = await setupUser();
+        const payload = {
+            terms: 'https://example.com/terms-v1',
+            privacy: 'https://example.com/privacy-v1',
+        };
+        const saved = await postAccept(testUser, payload, { appId: `${testUser.appId}` });
+        assert.equal(saved.status, 200);
+
+        const latest = await getAcceptance(testUser, { appId: `${testUser.appId}` });
+        assert.equal(latest.status, 200);
+        const body = latest.body as { terms: string; privacy: string; userId: number; appId: number };
+        assert.equal(body.userId, testUser.userId);
+        assert.equal(body.appId, testUser.appId);
+        assert.equal(body.terms, payload.terms);
+        assert.equal(body.privacy, payload.privacy);
+
+        const newer = {
+            terms: 'https://example.com/terms-v2',
+            privacy: 'https://example.com/privacy-v2',
+        };
+        await postAccept(testUser, newer, { appId: `${testUser.appId}` });
+        const afterSecond = await getAcceptance(testUser, { appId: `${testUser.appId}` });
+        assert.equal(afterSecond.status, 200);
+        const latestBody = afterSecond.body as { terms: string; privacy: string };
+        assert.equal(latestBody.terms, newer.terms);
+        assert.equal(latestBody.privacy, newer.privacy);
+
+        const em = getEm().fork();
+        const rows = await em.find(LegalAcceptance, { userId: testUser.userId, appId: testUser.appId });
+        await em.nativeDelete(LegalAcceptance, { userId: testUser.userId, appId: testUser.appId });
+        assert.isAtLeast(rows.length, 2);
+    });
+
+    it('returns 404 when the user has not accepted yet', async () => {
+        const testUser = await setupUser();
+        const latest = await getAcceptance(testUser, { appId: `${testUser.appId}` });
+        assert.equal(latest.status, 404);
+    });
+
+    it('requires authentication to get acceptance', async () => {
+        const latest = await getAcceptance(undefined);
+        assert.equal(latest.status, 401);
     });
 });

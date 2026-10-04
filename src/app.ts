@@ -23,8 +23,11 @@ app.use((req, res, next) => {
 });
 
 app.use('/api', getApiRouter());
-app.use('/', (req, res) => {
+app.get('/', (_req, res) => {
     res.send('ping');
+});
+app.use((_req, res) => {
+    res.status(404).json({ code: 404, message: 'Not found' });
 });
 
 

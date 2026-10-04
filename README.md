@@ -94,6 +94,14 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
    Credential is in aws-config repos for both dev and prod.
 5. Migration: run manually script in migrations folder      
 
+# SANDBOX
+1. Why do we need sandbox?
+   Mobile app needs a hostdomain to run. It's easy to just deploy to sandbox
+   Where does it run?
+   It runs on koyeb. The service is shutdown regularly but it's enough to test as sandbox.
+2. How to deploy to sandbox?
+   Use github action deploy-sandbox
+
 # RELEASE PROCEDURE
 
 ## Automatic deploy (GitHub Actions)
@@ -110,8 +118,8 @@ More details:
 Run docker from Windows host machine
 Inside WSL ubuntu, run `docker login -u golery`
 
-## Sandbox deploy
-1. Run github action deploy-sandbox.
+## Sandbox deploy (manual)
+1. Run github action deploy-sandbox for the branch.
 2. Manual: `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe
    Install https://www.koyeb.com/docs/build-and-deploy/cli/installation
    koyeb login

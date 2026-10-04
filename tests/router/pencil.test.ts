@@ -22,6 +22,17 @@ describe('router/pencil', () => {
             assert.equal(response.text, 'ping');
         });
 
+        it('returns 404 for unknown API route', async () => {
+            const response = await request(app).get('/api/public/no-such-endpoint').expect(404);
+            assert.equal(response.body.code, 404);
+            assert.equal(response.body.message, 'Not found');
+        });
+
+        it('returns 404 for unknown non-API route', async () => {
+            const response = await request(app).get('/no-such-page').expect(404);
+            assert.equal(response.body.code, 404);
+        });
+
         it('should initialize default book for new user', async () => {
             const testUser = await setupUser();
 

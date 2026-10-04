@@ -1,6 +1,16 @@
-# Accept terms and privacy
+# Legal acceptance
 
-A signed-in user records that they accepted the terms and privacy documents shown to them. Each call inserts a new row. The server sets the user, app id (from the access token), the time, and the client IP.
+A signed-in user records that they accepted the terms and privacy documents shown to them. Each accept call inserts a new row. The server sets the user, app id (from the access token), the time, and the client IP.
+
+## Get latest acceptance
+
+- **Method**: `GET`
+- **Path**: `/api/legal/acceptance`
+- **Auth**: `Authorization: Bearer <token>`
+
+Returns the most recent acceptance for the user and app from the token. **404** when the user has not accepted yet.
+
+## Accept terms and privacy
 
 - **Method**: `POST`
 - **Path**: `/api/legal/accept`

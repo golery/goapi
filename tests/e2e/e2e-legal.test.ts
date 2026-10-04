@@ -58,6 +58,28 @@ describe('e2e legal acceptance', () => {
         assert.equal(response.data.privacy, legalPayload.privacy);
         assert.equal(response.data.ipAddress, '203.0.113.10');
         assert.isString(response.data.acceptedAt);
+
+        const getResponse = await apiClient.get('/api/legal/acceptance', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                appId: `${appId}`,
+            },
+        });
+        assert.equal(getResponse.status, 200, JSON.stringify(getResponse.data));
+        assert.equal(getResponse.data.terms, legalPayload.terms);
+        assert.equal(getResponse.data.privacy, legalPayload.privacy);
+        assert.equal(getResponse.data.userId, userId);
+    });
+
+    it('returns 404 when acceptance was never recorded', async () => {
+        const { token, appId } = await signUp();
+        const response = await apiClient.get('/api/legal/acceptance', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                appId: `${appId}`,
+            },
+        });
+        assert.equal(response.status, 404);
     });
 
     it('rejects acceptance without document urls', async () => {

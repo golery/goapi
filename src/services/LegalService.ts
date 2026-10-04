@@ -45,6 +45,10 @@ export async function acceptLegal(ctx: Ctx, body: unknown, ipAddress: string) {
 
     await getEm().persistAndFlush(row);
 
+    return toLegalAcceptanceDto(row);
+}
+
+function toLegalAcceptanceDto(row: LegalAcceptance) {
     return {
         id: row.id,
         userId: row.userId,
@@ -54,4 +58,22 @@ export async function acceptLegal(ctx: Ctx, body: unknown, ipAddress: string) {
         ipAddress: row.ipAddress,
         acceptedAt: row.acceptedAt.toISOString(),
     };
+}
+
+export async function getLatestLegalAcceptance(ctx: Ctx) {
+    if (ctx.appId === undefined || ctx.appId === null) {
+        throw new ServerError(400, 'appId is required');
+    }
+
+    const row = await getEm().findOne(
+        LegalAcceptance,
+        { userId: ctx.userId, appId: ctx.appId },
+        { orderBy: { acceptedAt: 'DESC' } },
+    );
+
+    if (!row) {
+        throw new ServerError(404, 'Legal acceptance not found');
+    }
+
+    return toLegalAcceptanceDto(row);
 }
