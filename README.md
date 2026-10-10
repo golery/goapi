@@ -106,26 +106,13 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
 
 # RELEASE PROCEDURE
 
-## Automatic deploy (GitHub Actions)
-
-Run script scripts/merge-prod.sh or open a pull request in Github.
-Check deployment progress at url [https://github.com/golery/goapi/actions/workflows/deploy.yml]
-
-More details:
-- Every push to **`main`** runs the **Deploy** workflow: build image → push `golery/goapi:<commit-sha>` → SSH to `goapi-1` → run `run-goapi.sh`.
-- One-time setup: configure environment secrets for **`production`** (Docker Hub + GCP). See [docs/github-actions-setup.md](docs/github-actions-setup.md).
-
 ## Sandbox deploy (manual)
 1. Run github action deploy-sandbox for the branch.
 
 ## Production deploy (manual)
-1. (needs deploy-sandbox.sh) `./scripts/release.sh`:  
-   It will create a tag for docker image and output a command to run in GCP
-   ex: TAG=20240922180503 source /home/lyhoanghai/app-configs/scripts/run-goapi.sh
-2. Or rely on CI after merging to `main` (image tag is the git commit SHA).
-3. Fallback: open google console: https://console.cloud.google.com/compute/instances?project=golery
-   connect ssh web to node
-   Run the command from step 1
+1. ./scripts/merge-main.sh
+   ./scripts/merge-prod.sh
+   The merge to prod trigger the github action to deploy automatically.
 
 ## SECRETS and CONFIGURATION
 1. Store in app-configs, checked out in gcp node (gitlab)

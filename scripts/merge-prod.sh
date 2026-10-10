@@ -20,3 +20,4 @@ git -C "$BUILD" push origin HEAD:prod
 git worktree remove --force "$BUILD"
 
 echo "Done. prod is updated on origin (includes merge of main)."
+    
