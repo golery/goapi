@@ -115,16 +115,8 @@ More details:
 - Every push to **`main`** runs the **Deploy** workflow: build image → push `golery/goapi:<commit-sha>` → SSH to `goapi-1` → run `run-goapi.sh`.
 - One-time setup: configure environment secrets for **`production`** (Docker Hub + GCP). See [docs/github-actions-setup.md](docs/github-actions-setup.md).
 
-## Manual deploy
-
-Run docker from Windows host machine
-Inside WSL ubuntu, run `docker login -u golery`
-
 ## Sandbox deploy (manual)
 1. Run github action deploy-sandbox for the branch.
-2. Manual: `./scripts/deploy-sandbox.sh` to build and deploy a sandbox version to koybe
-   Install https://www.koyeb.com/docs/build-and-deploy/cli/installation
-   koyeb login
 
 ## Production deploy (manual)
 1. (needs deploy-sandbox.sh) `./scripts/release.sh`:  
@@ -141,3 +133,6 @@ Inside WSL ubuntu, run `docker login -u golery`
 # Setup WSL
 1. apt install zsh
    chsh -s $(which zsh)
+
+## Dev Env setup
+1. Don't need docker in WSL. Build are in Github actions
