@@ -111,7 +111,7 @@ export async function ensurePersonalGroup(ctx: Ctx): Promise<void> {
     const group = new Group();
     group.appId = ctx.appId;
     group.name = DEFAULT_GROUP_NAME;
-    await em.persist(group);
+    await em.persistAndFlush(group);
 
     const membership = new UserGroup();
     membership.userId = ctx.userId;

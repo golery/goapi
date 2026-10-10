@@ -101,6 +101,8 @@ In Virtual Machine, Add portforwarding so that Windows hostmachine can access wi
    It runs on koyeb. The service is shutdown regularly but it's enough to test as sandbox.
 2. How to deploy to sandbox?
    Use github action deploy-sandbox
+3. Which database does sandbox use?
+   Dev database
 
 # RELEASE PROCEDURE
 
