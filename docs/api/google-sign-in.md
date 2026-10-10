@@ -21,7 +21,10 @@
   "picture": "https://lh3.googleusercontent.com/...",
   "userId": <userId>,
   "appId": <appId>,
-  "groupIds": [<groupId>]
+  "groupIds": [<groupId>],
+  "groups": [
+    { "id": <groupId>, "name": "Personal", "role": "owner" }
+  ]
 }
 ```
 

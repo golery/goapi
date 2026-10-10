@@ -13,6 +13,12 @@ export const SignInRequestSchema = z.object({
 });
 
 
+export interface GroupSummary {
+    id: number,
+    name: string | null,
+    role: 'owner' | 'staff',
+}
+
 export interface SignInResponse {
     appId: number,
     userId: number,
@@ -22,6 +28,7 @@ export interface SignInResponse {
     lastName?: string,
     picture?: string,
     groupIds: number[],
+    groups: GroupSummary[],
 }
 
 export const SignInGoogleRequestSchema = z.object({
@@ -59,6 +66,7 @@ export interface GetUserResponse {
     lastName?: string,
     picture?: string,
     groupIds: number[],
+    groups: GroupSummary[],
 }
 
 export interface CreateGroupResponse {

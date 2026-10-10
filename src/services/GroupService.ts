@@ -120,7 +120,7 @@ export async function ensurePersonalGroup(ctx: Ctx): Promise<void> {
     await em.persistAndFlush(membership);
 }
 
-export async function listGroups(ctx: Ctx) {
+export async function listGroupsForUser(ctx: Ctx) {
     await ensurePersonalGroup(ctx);
     const em = getEm();
     const memberships = await em.find(UserGroup, { userId: ctx.userId }, { orderBy: { groupId: 'ASC' } });
@@ -132,6 +132,11 @@ export async function listGroups(ctx: Ctx) {
         }
     }
     groups.sort((a, b) => a.id - b.id);
+    return groups;
+}
+
+export async function listGroups(ctx: Ctx) {
+    const groups = await listGroupsForUser(ctx);
     return { groups };
 }
 

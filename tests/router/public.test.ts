@@ -34,6 +34,10 @@ describe('router/public', function () {
                 .expect(200);
             // then there is a token in response    
             assert.isNotEmpty(signUpResponse.token);
+            assert.lengthOf(signUpResponse.groupIds, 1);
+            assert.deepEqual(signUpResponse.groups, [
+                { id: signUpResponse.groupIds[0], name: 'Personal', role: 'owner' },
+            ]);
 
             // then can sign in with the new account
             const { body: signInResponse } = await request(app)

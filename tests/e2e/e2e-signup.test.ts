@@ -32,6 +32,11 @@ describe('e2e signup account', () => {
         assert.isAbove(signUpResponse.data.userId, 0);
         assert.isArray(signUpResponse.data.groupIds);
         assert.lengthOf(signUpResponse.data.groupIds, 1);
+        assert.isArray(signUpResponse.data.groups);
+        assert.lengthOf(signUpResponse.data.groups, 1);
+        assert.equal(signUpResponse.data.groups[0].id, signUpResponse.data.groupIds[0]);
+        assert.equal(signUpResponse.data.groups[0].name, 'Personal');
+        assert.equal(signUpResponse.data.groups[0].role, 'owner');
 
         const token = signUpResponse.data.token as string;
         const userId = signUpResponse.data.userId as number;
@@ -44,9 +49,7 @@ describe('e2e signup account', () => {
         });
         assert.equal(groupsResponse.status, 200, JSON.stringify(groupsResponse.data));
         assert.lengthOf(groupsResponse.data.groups, 1);
-        assert.equal(groupsResponse.data.groups[0].id, signUpResponse.data.groupIds[0]);
-        assert.equal(groupsResponse.data.groups[0].name, 'Personal');
-        assert.equal(groupsResponse.data.groups[0].role, 'owner');
+        assert.deepEqual(groupsResponse.data.groups, signUpResponse.data.groups);
 
         const signInResponse = await apiClient.post('/api/public/signin', {
             appId,

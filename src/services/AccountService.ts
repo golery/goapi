@@ -11,9 +11,7 @@ import * as jwt from 'jsonwebtoken';
 import { getSecrets } from './ConfigService';
 import axios from 'axios';
 import { getTokenInfo } from '../external/google';
-import { UserGroup } from '../entity/UserGroup.entity';
-import { findGroupIdsByUserId } from '../repositories/group';
-import { ensurePersonalGroup } from './GroupService';
+import { ensurePersonalGroup, listGroupsForUser } from './GroupService';
 import { Ctx } from '../types/context';
 
 export const MOCK_TOKEN = 'mock_token';
@@ -125,9 +123,20 @@ export const signInGoogle = async (appId: number | undefined, idToken: string): 
     const token = createAccessToken(user);
 
     await ensurePersonalGroup({ appId: user.appId, userId: user.id });
-    const groupIds = await findGroupIdsByUserId(user.id);
+    const groups = await listGroupsForUser({ appId: user.appId, userId: user.id });
+    const groupIds = groups.map((g) => g.id);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email, firstName: user.firstName, lastName: user.lastName, picture: user.picture, groupIds };
+    return {
+        appId: user.appId,
+        userId: user.id,
+        token,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        picture: user.picture,
+        groupIds,
+        groups,
+    };
 };
 
 
@@ -163,9 +172,10 @@ export const signup = async (appIdInput: number | undefined, emailInput: string,
     logger.info(`Created user ${user.id}`);
 
     await ensurePersonalGroup({ appId: user.appId, userId: user.id });
-    const groupIds = await findGroupIdsByUserId(user.id);
+    const groups = await listGroupsForUser({ appId: user.appId, userId: user.id });
+    const groupIds = groups.map((g) => g.id);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
+    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds, groups };
 };
 
 
@@ -194,17 +204,17 @@ export const signIn = async (appId: number | undefined, emailInput: string, pass
     const token = createAccessToken(user);
 
     await ensurePersonalGroup({ appId: user.appId, userId: user.id });
-    const groupIds = await findGroupIdsByUserId(user.id);
+    const groups = await listGroupsForUser({ appId: user.appId, userId: user.id });
+    const groupIds = groups.map((g) => g.id);
 
-    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds };
+    return { appId: user.appId, userId: user.id, token, email: user.email, groupIds, groups };
 };
 
 
 export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
-    await ensurePersonalGroup(ctx);
     const em = getEm();
     const user = await em.findOneOrFail(User, { id: ctx.userId });
-    const groups = await em.find(UserGroup, { userId: ctx.userId });
+    const groups = await listGroupsForUser(ctx);
 
     return {
         email: user.email,
@@ -212,6 +222,7 @@ export async function getUserInfo(ctx: Ctx): Promise<GetUserResponse> {
         firstName: user.firstName,
         lastName: user.lastName,
         picture: user.picture,
-        groupIds: groups.map((ug) => ug.groupId),
+        groupIds: groups.map((g) => g.id),
+        groups,
     };
 }
