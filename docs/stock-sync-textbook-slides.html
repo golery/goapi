@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Stock Sync · Textbook Slides</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1e2b39;
+      --muted: #627184;
+      --paper: #f3f0e8;
+      --sheet: #fffdf8;
+      --rule: #ded9cb;
+      --blue: #285c83;
+      --blue-pale: #e9f1f7;
+      --green: #28704e;
+      --green-pale: #e8f3ec;
+      --gold: #a16a22;
+      --gold-pale: #f8efdd;
+      --red: #a2453f;
+      --red-pale: #f9ece9;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--paper); }
+    button { font: inherit; }
+
+    .app {
+      display: grid;
+      min-height: 100vh;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .topbar, .bottombar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px clamp(14px, 3vw, 34px);
+      color: var(--muted);
+      font: 12px/1.3 system-ui, sans-serif;
+    }
+
+    .topbar { border-bottom: 1px solid var(--rule); }
+    .brand { color: var(--ink); font-weight: 750; letter-spacing: .04em; }
+    .controls { display: flex; align-items: center; gap: 8px; }
+    .controls button {
+      min-width: 38px;
+      min-height: 34px;
+      border: 1px solid var(--rule);
+      border-radius: 7px;
+      background: var(--sheet);
+      color: var(--ink);
+      cursor: pointer;
+      font: 700 12px system-ui, sans-serif;
+    }
+    .controls button:hover { border-color: var(--blue); }
+    .controls button:focus-visible { outline: 3px solid #9abbd1; outline-offset: 2px; }
+    .counter { min-width: 58px; text-align: center; font-family: var(--mono); }
+
+    .stage {
+      display: grid;
+      place-items: center;
+      padding: clamp(12px, 2vw, 24px);
+    }
+
+    .slide {
+      display: none;
+      position: relative;
+      width: min(1280px, 100%);
+      aspect-ratio: 16 / 9;
+      overflow: auto;
+      padding: clamp(24px, 4.5vw, 62px) clamp(25px, 5vw, 72px);
+      border: 1px solid #e6e0d3;
+      border-radius: 4px;
+      background:
+        linear-gradient(90deg, transparent 0, transparent 44px, #d9a99c 45px, transparent 46px),
+        repeating-linear-gradient(to bottom, transparent 0, transparent 39px, #dce5eb 40px),
+        var(--sheet);
+      box-shadow: 0 18px 55px #273a4c1c;
+    }
+
+    .slide.active { display: block; animation: arrive .28s ease-out; }
+    @keyframes arrive { from { opacity: .35; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .slide-inner { position: relative; min-height: 100%; padding-left: clamp(18px, 2vw, 30px); }
+    .folio {
+      position: absolute;
+      top: 0;
+      right: 0;
+      color: #8b8b7f;
+      font: 11px var(--mono);
+    }
+
+    .chapter {
+      margin: 0 0 11px;
+      color: var(--blue);
+      font: 800 11px/1.2 system-ui, sans-serif;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 850px; margin-bottom: 18px; font-size: clamp(36px, 6vw, 72px); line-height: .98; letter-spacing: -.045em; }
+    h2 { max-width: 1000px; margin-bottom: 17px; font-size: clamp(28px, 4vw, 46px); line-height: 1.05; letter-spacing: -.035em; }
+    h3 { margin-bottom: 8px; font: 750 17px/1.25 system-ui, sans-serif; }
+    .lead { max-width: 830px; color: #485a6c; font-size: clamp(17px, 2vw, 23px); line-height: 1.42; }
+    .body { max-width: 960px; font-size: clamp(15px, 1.35vw, 18px); line-height: 1.48; }
+    .small { color: var(--muted); font: 12px/1.45 system-ui, sans-serif; }
+    .strong { color: var(--blue); font-weight: 700; }
+    .cover-label { margin: 22px 0 11px; color: var(--green); font: 800 12px system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+    .cover-bottom { position: absolute; bottom: 0; left: 30px; color: var(--muted); font: 13px system-ui, sans-serif; }
+
+    .rule { height: 1px; margin: 17px 0; background: var(--rule); }
+    .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .cols.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      min-width: 0;
+      padding: 15px 17px;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      background: #fffefa;
+    }
+    .card p:last-child { margin-bottom: 0; }
+    .card.blue { border-color: #c9d9e4; background: var(--blue-pale); }
+    .card.green { border-color: #c8ddce; background: var(--green-pale); }
+    .card.gold { border-color: #e8d9b9; background: var(--gold-pale); }
+    .card.red { border-color: #e7cbc6; background: var(--red-pale); }
+    .label {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--blue);
+      font: 800 10px system-ui, sans-serif;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    ul, ol { margin: 7px 0 0; padding-left: 22px; }
+    li { margin: 0 0 7px; }
+    .body li { line-height: 1.4; }
+    .callout {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-left: 4px solid var(--gold);
+      background: var(--gold-pale);
+      font-size: 15px;
+      line-height: 1.42;
+    }
+
+    .diagram-flow { display: grid; grid-template-columns: 1fr auto 1.12fr auto 1fr; align-items: center; gap: 12px; margin: 24px 0; }
+    .flow-node { padding: 15px; border: 1px solid var(--rule); border-radius: 9px; background: #fffefa; text-align: center; }
+    .flow-node strong { display: block; margin-bottom: 6px; font: 750 15px system-ui, sans-serif; }
+    .flow-node span { color: var(--muted); font: 12px/1.45 system-ui, sans-serif; }
+    .flow-arrow { color: var(--blue); font: 800 25px system-ui, sans-serif; }
+    .device-stack { display: grid; gap: 8px; }
+    .device-chip { padding: 8px 10px; border-radius: 6px; background: var(--blue-pale); font: 700 12px system-ui, sans-serif; }
+    .store-stack { display: grid; gap: 7px; }
+    .store-chip { padding: 8px 10px; border-radius: 6px; background: var(--green-pale); font: 700 12px system-ui, sans-serif; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.35; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; text-align: left; }
+    th { color: var(--muted); font: 800 10px system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+    td:first-child { font: 700 12px var(--mono); white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+
+    pre {
+      overflow: auto;
+      margin: 9px 0 0;
+      padding: 13px 15px;
+      border: 1px solid #d6dce0;
+      border-radius: 7px;
+      background: #f4f6f6;
+      color: #273847;
+      font: 11px/1.5 var(--mono);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .equation { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 25px 0; font: 750 clamp(20px, 3vw, 34px) system-ui, sans-serif; }
+    .equation .num { padding: 13px 17px; border-radius: 8px; background: var(--blue-pale); color: var(--blue); }
+    .equation .result { padding: 13px 17px; border-radius: 8px; background: var(--green-pale); color: var(--green); }
+    .foot { position: absolute; right: 0; bottom: 0; left: 30px; display: flex; justify-content: space-between; color: #879092; font: 10px system-ui, sans-serif; }
+    .key { display: inline-block; min-width: 22px; padding: 2px 5px; border: 1px solid var(--rule); border-radius: 4px; background: var(--sheet); text-align: center; font: 10px var(--mono); }
+    .bottombar { border-top: 1px solid var(--rule); }
+    .progress { width: min(260px, 28vw); height: 4px; overflow: hidden; border-radius: 4px; background: #dcd8cc; }
+    .progress span { display: block; width: 0; height: 100%; background: var(--blue); transition: width .25s ease; }
+
+    @media (max-width: 760px) {
+      .topbar .brand { font-size: 11px; }
+      .slide { aspect-ratio: auto; min-height: min(78vh, 900px); padding: 26px 22px 42px; }
+      .slide-inner { padding-left: 14px; }
+      .cols, .cols.three { grid-template-columns: 1fr; }
+      .diagram-flow { grid-template-columns: 1fr; }
+      .flow-arrow { transform: rotate(90deg); justify-self: center; }
+      .foot { left: 14px; }
+      table { font-size: 12px; }
+      th, td { padding: 7px 6px; }
+      td:first-child { white-space: normal; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    @media print {
+      :root { --paper: #fff; --sheet: #fff; }
+      body { background: #fff; }
+      .app { display: block; }
+      .topbar, .bottombar { display: none; }
+      .stage { display: block; padding: 0; }
+      .slide, .slide.active {
+        display: block;
+        width: 100%;
+        height: 7.5in;
+        min-height: 0;
+        aspect-ratio: auto;
+        overflow: hidden;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+      }
+      .slide:last-child { page-break-after: auto; break-after: auto; }
+      .foot { position: absolute; }
+      @page { size: landscape; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">FIELD GUIDE · OFFLINE STOCK SYNC</div>
+      <div class="controls">
+        <button id="prev" aria-label="Previous slide">←</button>
+        <span id="counter" class="counter">01 / 12</span>
+        <button id="next" aria-label="Next slide">→</button>
+      </div>
+    </div>
+
+    <main class="stage" id="stage">
+      <section class="slide active">
+        <div class="slide-inner">
+          <div class="folio">01</div>
+          <p class="cover-label">A field guide to distributed state</p>
+          <h1>Offline stock sync</h1>
+          <p class="lead">How two mobile devices record changes without a network, send them safely, and converge on the same group inventory.</p>
+          <div class="rule"></div>
+          <div class="cols three body">
+            <div class="card blue"><span class="label">The client</span><p>Stores a durable outbox and a group pull cursor.</p></div>
+            <div class="card green"><span class="label">The backend</span><p>Validates events and assigns one ordered sequence per group.</p></div>
+            <div class="card gold"><span class="label">The sync loop</span><p>Pushes local events, then pulls the shared log in pages.</p></div>
+          </div>
+          <p class="cover-bottom">Use <span class="key">←</span> and <span class="key">→</span> to move through the lesson · Print for a paper deck</p>
+          <div class="foot"><span>Stock operations protocol</span><span>Lesson 01</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">02</div>
+          <p class="chapter">1 · Mental model</p>
+          <h2>Sync events; don’t replace the whole inventory</h2>
+          <p class="body">A mobile action becomes an operation. The backend applies that operation to current stock and appends it to a group-wide log. The log is the shared history; on-hand quantities are the resulting state.</p>
+          <div class="diagram-flow">
+            <div class="flow-node"><strong>Mobile outboxes</strong><div class="device-stack"><div class="device-chip">Phone A · receive +4</div><div class="device-chip">Phone B · receive +5</div></div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>Stock API</strong><span>authenticate · validate · serialize</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node"><strong>Group data</strong><div class="store-stack"><div class="store-chip">Operation log · seq 1, 2</div><div class="store-chip">On hand · 9</div></div></div>
+          </div>
+          <div class="callout"><b>Key distinction:</b> an operation says what changed; a pull cursor says how much of the shared log this device has applied.</div>
+          <div class="foot"><span>Model: append operations, derive inventory</span><span>02</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">03</div>
+          <p class="chapter">2 · Offline write</p>
+          <h2>Save the operation before trying the network</h2>
+          <div class="cols">
+            <div class="card blue body">
+              <span class="label">One local transaction</span>
+              <ol>
+                <li>Create a unique <code>opId</code>.</li>
+                <li>Assign this device’s next <code>deviceSeq</code>.</li>
+                <li>Copy the current group cursor into <code>baseSeq</code>.</li>
+                <li>Write the complete request to the durable outbox.</li>
+                <li>Update the local view optimistically.</li>
+              </ol>
+            </div>
+            <div>
+              <pre>{
+  "deviceId": "device-A",
+  "deviceSeq": 8,
+  "baseSeq": 5,
+  "op": {
+    "opId": "stable UUID for retries",
+    "type": "receive",
+    "productId": "ball",
+    "storageId": "main",
+    "quantity": 4
+  }
+}</pre>
+              <p class="small">The values above are illustrative. Persist the actual body and resend it unchanged after timeouts.</p>
+            </div>
+          </div>
+          <div class="callout">A queued event remains pending until the server acknowledges it. A temporary network failure must not generate a new <code>opId</code>.</div>
+          <div class="foot"><span>Client state: outbox + local inventory + group cursor</span><span>03</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">04</div>
+          <p class="chapter">3 · Sequence vocabulary</p>
+          <h2>Several counters track different scopes</h2>
+          <table>
+            <thead><tr><th>Name</th><th>Scope</th><th>Meaning</th><th>Example in this lesson</th></tr></thead>
+            <tbody>
+              <tr><td>deviceSeq</td><td>One device</td><td>Ordinal of an operation submitted by that device.</td><td>A=1, B=1</td></tr>
+              <tr><td>last_device_seq</td><td>One device, backend</td><td>Last accepted device sequence; next expected is +1.</td><td>0 → 1 on each device</td></tr>
+              <tr><td>baseSeq</td><td>One operation</td><td>Group cursor copied when the operation was created.</td><td>A=0, B=0; immutable on retry</td></tr>
+              <tr><td>seq</td><td>One group operation</td><td>Position assigned by the backend in the shared log.</td><td>A=1, B=2</td></tr>
+              <tr><td>next_seq</td><td>Group counter</td><td>Next group sequence the backend will allocate.</td><td>1 → 2 → 3</td></tr>
+              <tr><td>latestSeq</td><td>Group head snapshot</td><td>Highest group sequence reported with a response.</td><td>0 → 1 → 2</td></tr>
+              <tr><td>lastAppliedSeq</td><td>One client, one group</td><td>Last group operation applied and saved locally.</td><td>A=0→2, B=0→2</td></tr>
+              <tr><td>after / nextAfter</td><td>One pull page</td><td>Request cursor and cursor to use for the next page.</td><td>0 → 2</td></tr>
+            </tbody>
+          </table>
+          <div class="callout"><b>Do not mix the scopes:</b> <code>deviceSeq</code> is local to a device; <code>seq</code> and <code>latestSeq</code> are group-wide.</div>
+          <div class="foot"><span>Sequence numbers are not timestamps</span><span>04</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">05</div>
+          <p class="chapter">4 · Reconnect algorithm</p>
+          <h2>Pull, push in order, then pull again</h2>
+          <div class="cols three body">
+            <div class="card blue"><span class="label">1 · Pre-pull</span><h3>Refresh shared state</h3><p>GET after the saved <code>lastAppliedSeq</code>. Apply pages in <code>seq</code> order and persist state with the new cursor.</p></div>
+            <div class="card green"><span class="label">2 · Push</span><h3>Drain the outbox</h3><p>POST one operation at a time in ascending <code>deviceSeq</code>. Remove only after acknowledgment.</p></div>
+            <div class="card gold"><span class="label">3 · Post-pull</span><h3>Catch concurrent writes</h3><p>Pull again. This picks up operations from other devices that arrived during the push phase.</p></div>
+          </div>
+          <pre>sync(group):
+  pullUntilCaughtUp(group)
+  for op in outbox ordered by deviceSeq:
+    POST the exact saved request
+    on success: remove from outbox
+    on timeout: retry the exact same request
+  pullUntilCaughtUp(group)</pre>
+          <div class="callout">The push acknowledgment’s <code>latestSeq</code> helps decide whether another pull is useful. A new write can commit just after that value was sampled.</div>
+          <div class="foot"><span>Use authenticated appId and groupId headers on both endpoints</span><span>05</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">06</div>
+          <p class="chapter">5 · Push contract</p>
+          <h2>Push is an idempotent command</h2>
+          <div class="cols">
+            <div>
+              <p class="body">Endpoint: <code>POST /api/stock/ops</code></p>
+              <pre>{
+  "deviceId": "device-A UUID",
+  "deviceSeq": 1,
+  "baseSeq": 0,
+  "op": {
+    "opId": "operation UUID",
+    "v": 1,
+    "type": "receive",
+    "at": 1792333176805,
+    "productId": "ball",
+    "storageId": "main",
+    "quantity": 4
+  }
+}</pre>
+            </div>
+            <div>
+              <p class="body">Successful acknowledgment: <code>200</code></p>
+              <pre>{
+  "seq": 1,
+  "latestSeq": 1,
+  "opId": "operation UUID",
+  "deviceId": "device-A UUID",
+  "type": "receive",
+  "at": 1792333176805,
+  "result": "accepted",
+  "onHand": [{
+    "productId": "ball",
+    "storageId": "main",
+    "quantity": 4
+  }]
+}</pre>
+            </div>
+          </div>
+          <div class="callout"><b>Retry rule:</b> if the outcome is unknown after a timeout, resend the same <code>opId</code>, <code>deviceSeq</code>, and body. The server returns the original operation result instead of applying it twice.</div>
+          <div class="foot"><span>Push acknowledgment omits payload; pull log retains operation details</span><span>06</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">07</div>
+          <p class="chapter">6 · Backend transaction</p>
+          <h2>One transaction orders writes for a group</h2>
+          <ol class="body">
+            <li>Authenticate the caller and verify group membership.</li>
+            <li>Validate the operation and check whether <code>opId</code> was already accepted.</li>
+            <li>Lock the group counter so concurrent operations get distinct ordered sequences.</li>
+            <li>Check <code>deviceSeq</code>; lock affected stock positions.</li>
+            <li>Apply the event to current on-hand, assign <code>seq</code>, and persist operation, snapshot, and device cursor.</li>
+            <li>Commit, then return the operation’s <code>seq</code> and the sampled <code>latestSeq</code>.</li>
+          </ol>
+          <div class="cols">
+            <div class="card green"><span class="label">Atomicity</span><p class="body">The position update and operation log entry commit together. A failed transaction should leave neither half applied.</p></div>
+            <div class="card blue"><span class="label">Serialization</span><p class="body">The group counter is locked during the transaction, so two successful writes receive a definite order.</p></div>
+          </div>
+          <div class="foot"><span>Current materialized stock is updated with the event log</span><span>07</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">08</div>
+          <p class="chapter">7 · Pull contract</p>
+          <h2>Pull reads a bounded page from the group log</h2>
+          <p class="body">Request: <code>GET /api/stock/ops?after=&lt;lastAppliedSeq&gt;</code></p>
+          <pre>latestSeq = sample current group head
+ops = SELECT ...
+      WHERE seq &gt; after AND seq &lt;= latestSeq
+      ORDER BY seq
+      LIMIT 500
+nextAfter = last returned seq (or after if empty)
+hasMore = nextAfter &lt; latestSeq</pre>
+          <div class="cols three body">
+            <div class="card blue"><span class="label">Lower bound</span><p><code>seq &gt; after</code> prevents replaying the cursor item.</p></div>
+            <div class="card green"><span class="label">Upper bound</span><p><code>seq &lt;= latestSeq</code> keeps the page aligned with its reported head.</p></div>
+            <div class="card gold"><span class="label">Page size</span><p>At most 500 operations; apply them and continue from <code>nextAfter</code> if <code>hasMore</code>.</p></div>
+          </div>
+          <div class="callout">Persist inventory changes and the new cursor atomically. If the app crashes between those writes, it can skip or reapply operations.</div>
+          <div class="foot"><span>latestSeq is a sampled head, not a live subscription</span><span>08</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">09</div>
+          <p class="chapter">8 · Worked example</p>
+          <h2>Two offline receives converge to the same stock</h2>
+          <p class="body">Both clients last applied group sequence 0. While offline, A receives 4 and B receives 5. Each uses <code>baseSeq: 0</code>; each has a separate device ID and starts at <code>deviceSeq: 1</code>.</p>
+          <table>
+            <thead><tr><th>Step</th><th>Request / event</th><th>Group seq</th><th>On hand after</th><th>latestSeq</th></tr></thead>
+            <tbody>
+              <tr><td>Offline A</td><td>Queue receive 4</td><td>Not assigned</td><td>A shows 4 locally</td><td>—</td></tr>
+              <tr><td>Offline B</td><td>Queue receive 5</td><td>Not assigned</td><td>B shows 5 locally</td><td>—</td></tr>
+              <tr><td>Push A</td><td>deviceSeq 1 · baseSeq 0</td><td>1</td><td>0 + 4 = 4</td><td>1</td></tr>
+              <tr><td>Push B</td><td>deviceSeq 1 · baseSeq 0</td><td>2</td><td>4 + 5 = 9</td><td>2</td></tr>
+              <tr><td>Pull both</td><td>GET after 0 · operations 1, 2</td><td>Apply in order</td><td>A=9 · B=9</td><td>2</td></tr>
+            </tbody>
+          </table>
+          <div class="equation"><span class="num">4</span><span>+</span><span class="num">5</span><span>=</span><span class="result">9 on hand</span></div>
+          <p class="small">A and B may push in either order. The backend sequence reflects commit order; additive receives preserve both quantities.</p>
+          <div class="foot"><span>Same group log, independent device counters</span><span>09</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">10</div>
+          <p class="chapter">9 · Recovery and conflicts</p>
+          <h2>Retry transport failures; resolve semantic conflicts</h2>
+          <div class="cols">
+            <div class="card blue body">
+              <span class="label">Unknown network outcome</span>
+              <h3>Retry the same operation</h3>
+              <p>A timeout does not prove the server failed to commit. Reuse the original <code>opId</code> and body; idempotency prevents a double application.</p>
+            </div>
+            <div class="card red body">
+              <span class="label">Count conflict · HTTP 409</span>
+              <h3>Refresh and make a new count</h3>
+              <p>If current on-hand differs from a count line’s <code>expected</code>, the server rejects the count with conflict details. Pull, reconcile, then queue a revised operation with a new <code>opId</code>.</p>
+            </div>
+          </div>
+          <div class="cols" style="margin-top:16px">
+            <div class="card gold body"><span class="label">Sequence gap · HTTP 409</span><p><code>expectedDeviceSeq</code> tells the client the next device operation number. Reconcile the outbox before sending more.</p></div>
+            <div class="card green body"><span class="label">Inventory semantics</span><p>Receives add; sells subtract and can go below zero; moves transfer; counts set observed values only when expectations still match.</p></div>
+          </div>
+          <div class="foot"><span>Transport retry ≠ operation conflict</span><span>10</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">11</div>
+          <p class="chapter">10 · Client pseudocode</p>
+          <h2>Keep local state and cursors crash-safe</h2>
+          <pre>recordOffline(op):
+  local transaction:
+    request = { opId: uuid(), deviceId, deviceSeq: nextDeviceSeq,
+                baseSeq: lastAppliedSeq, op }
+    outbox.append(request)
+    nextDeviceSeq += 1
+    applyOptimistically(op)
+
+sync():
+  pullUntilCaughtUp()
+  for request in outbox ordered by deviceSeq:
+    response = POST(request)
+    if success: remove request from outbox
+    if timeout: retry exact request
+  pullUntilCaughtUp()
+
+pullUntilCaughtUp():
+  page = GET(after = lastAppliedSeq)
+  local transaction:
+    apply page.ops ordered by seq
+    save inventory and page.nextAfter together
+  if page.hasMore: repeat</pre>
+          <div class="callout">Use a stable device ID per app installation and group. Keep one <code>lastAppliedSeq</code> per group, not one global cursor for the whole account.</div>
+          <div class="foot"><span>Mobile owns durable retry state; server owns group ordering</span><span>11</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <div class="slide-inner">
+          <div class="folio">12</div>
+          <p class="chapter">Review · the protocol in five statements</p>
+          <h2>Keep these invariants in mind</h2>
+          <ol class="body">
+            <li><b>Persist before sending.</b> An offline operation must survive process death.</li>
+            <li><b>Retry identically.</b> Keep the same <code>opId</code>, <code>deviceSeq</code>, and body after a timeout.</li>
+            <li><b>Order per device.</b> Push outbox operations serially in <code>deviceSeq</code> order.</li>
+            <li><b>Order per group.</b> Use server <code>seq</code> and the client’s <code>lastAppliedSeq</code> for pulls.</li>
+            <li><b>Commit state and cursor together.</b> The inventory projection and pull cursor form one local transaction.</li>
+          </ol>
+          <div class="cols">
+            <div class="card blue"><span class="label">Check your understanding</span><p class="body">Two devices both send <code>deviceSeq: 1</code>. Is that a collision?</p></div>
+            <div class="card green"><span class="label">Answer</span><p class="body">No. Device sequence is scoped to a device. The backend assigns distinct group sequences, such as 12 and 13.</p></div>
+          </div>
+          <div class="foot"><span>Companion: <a href="stock-sync-dataflow.html">interactive dataflow animation</a></span><span>12</span></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="bottombar">
+      <div>Offline stock sync · textbook edition</div>
+      <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+      <div><span class="key">←</span> <span class="key">→</span> navigate</div>
+    </div>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    let current = 0;
+
+    function show(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((slide, i) => slide.classList.toggle("active", i === current));
+      counter.textContent = `${String(current + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      document.getElementById("prev").disabled = current === 0;
+      document.getElementById("next").disabled = current === slides.length - 1;
+    }
+
+    document.getElementById("prev").addEventListener("click", () => show(current - 1));
+    document.getElementById("next").addEventListener("click", () => show(current + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown") show(current + 1);
+      if (event.key === "ArrowLeft" || event.key === "PageUp") show(current - 1);
+      if (event.key === "Home") show(0);
+      if (event.key === "End") show(slides.length - 1);
+    });
+    show(0);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock sync · mobile ↔ backend dataflow</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17251f;
+      --muted: #68766f;
+      --line: #d9e1db;
+      --paper: #f5f7f3;
+      --card: #ffffff;
+      --green: #16734d;
+      --green-soft: #e3f4e9;
+      --blue: #2864a0;
+      --blue-soft: #eaf2fb;
+      --amber: #a76212;
+      --amber-soft: #fff1d8;
+      --violet: #7051a5;
+      --violet-soft: #f1ebfa;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 30px clamp(16px, 3vw, 42px) 42px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(25px, 4vw, 39px);
+      letter-spacing: -.04em;
+      line-height: 1.05;
+    }
+
+    .intro {
+      max-width: 700px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      flex: 0 0 auto;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0 13px;
+      background: var(--card);
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #9aaba0; }
+    button:focus-visible { outline: 3px solid #9bc9ad; outline-offset: 2px; }
+
+    button.primary {
+      border-color: var(--green);
+      background: var(--green);
+      color: white;
+    }
+
+    .frame {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: 0 12px 38px #1b35230c;
+    }
+
+    .stage-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 17px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .step-count {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 11px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .stage-copy { min-width: 0; }
+    .stage-title { margin: 0; font-size: 16px; font-weight: 800; }
+    .stage-note { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+
+    .progress {
+      height: 3px;
+      background: #e8eee9;
+    }
+
+    .progress > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: var(--green);
+      transition: width .35s ease;
+    }
+
+    .diagram-wrap {
+      padding: 10px 16px 0;
+      background:
+        radial-gradient(ellipse at 48% 55%, #f3f8f2 0%, #fff 62%);
+    }
+
+    svg.diagram {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 300px;
+      overflow: visible;
+    }
+
+    .route {
+      fill: none;
+      stroke: #c8d3cc;
+      stroke-width: 2;
+      stroke-dasharray: 6 7;
+      marker-end: url(#arrow);
+      transition: stroke .2s ease, stroke-width .2s ease;
+    }
+
+    .route.active {
+      stroke: var(--green);
+      stroke-width: 3;
+      stroke-dasharray: 8 5;
+      animation: dash .55s linear infinite;
+    }
+
+    .route.pull.active { stroke: var(--violet); }
+
+    @keyframes dash { to { stroke-dashoffset: -13; } }
+
+    .lane-label {
+      fill: #728078;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .flow-label {
+      fill: #6c7971;
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+
+    .node {
+      fill: #fff;
+      stroke: var(--line);
+      stroke-width: 1.5;
+      transition: stroke .2s ease, fill .2s ease, filter .2s ease;
+    }
+
+    .node.mobile { fill: #fbfdff; }
+    .node.backend { fill: #fbfdfb; }
+    .node.log { fill: #fffdfa; }
+    .node.active-mobile { stroke: var(--blue); filter: drop-shadow(0 5px 10px #2864a018); }
+    .node.active-backend { stroke: var(--green); filter: drop-shadow(0 5px 10px #16734d18); }
+    .node.active-log { stroke: var(--amber); filter: drop-shadow(0 5px 10px #a7621218); }
+
+    .node-title { fill: var(--ink); font-size: 18px; font-weight: 800; }
+    .node-sub { fill: #758179; font-size: 12px; }
+    .node-value { fill: var(--ink); font-size: 15px; font-family: var(--mono); font-weight: 700; }
+    .node-detail { fill: #68766f; font-size: 12px; font-family: var(--mono); }
+    .node-pill { fill: var(--blue-soft); }
+    .node-pill-text { fill: var(--blue); font-size: 11px; font-weight: 800; }
+    .backend-pill { fill: var(--green-soft); }
+    .backend-pill-text { fill: var(--green); font-size: 11px; font-weight: 800; }
+    .log-pill { fill: var(--amber-soft); }
+    .log-pill-text { fill: var(--amber); font-size: 11px; font-weight: 800; }
+
+    .packet {
+      display: none;
+      fill: #fff;
+      stroke: var(--green);
+      stroke-width: 5;
+      filter: drop-shadow(0 2px 5px #16734d55);
+    }
+
+    .packet.visible { display: block; }
+    .packet.pull-packet { stroke: var(--violet); filter: drop-shadow(0 2px 5px #7051a555); }
+
+    .log-row { fill: #68766f; font-size: 12px; font-family: var(--mono); }
+    .log-row.emphasis { fill: var(--amber); font-weight: 800; }
+
+    .data-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .data-panel {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfa;
+    }
+
+    .data-panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .data-panel h2 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .data-panel .tag {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .sequence-panel {
+      margin: 0 20px 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfa;
+    }
+
+    .sequence-panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sequence-panel h2 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .sequence-panel .tag {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .sequence-scroll { overflow-x: auto; }
+
+    table.sequence-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .sequence-table th,
+    .sequence-table td {
+      padding: 8px 13px;
+      border-bottom: 1px solid #e8eee9;
+      vertical-align: top;
+    }
+
+    .sequence-table th {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    .sequence-table tr:last-child td { border-bottom: 0; }
+    .sequence-table td:first-child { min-width: 155px; font-family: var(--mono); font-weight: 700; }
+    .sequence-table td:nth-child(2) { min-width: 230px; font-family: var(--mono); color: #174c7f; }
+    .sequence-table td:last-child { min-width: 250px; color: var(--muted); }
+
+    .pseudo-panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 0 20px 18px;
+    }
+
+    .pseudo-panel {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfcfa;
+    }
+
+    .pseudo-panel header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .pseudo-panel h2 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .pseudo-panel .tag {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .code-lines {
+      min-height: 280px;
+      max-height: 390px;
+      overflow: auto;
+      padding: 11px 8px;
+      background: #f7f9f6;
+      font: 11px/1.65 var(--mono);
+    }
+
+    .code-line {
+      display: block;
+      min-height: 18px;
+      padding: 0 8px;
+      border-radius: 5px;
+      color: #435149;
+      white-space: pre;
+    }
+
+    .code-line.active-mobile {
+      background: var(--blue-soft);
+      color: #174c7f;
+      font-weight: 700;
+    }
+
+    .code-line.active-backend {
+      background: var(--green-soft);
+      color: #155c3e;
+      font-weight: 700;
+    }
+
+    pre {
+      min-height: 136px;
+      max-height: 248px;
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      color: #314038;
+      font: 11px/1.55 var(--mono);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 0 22px 18px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+    .legend .server i { background: var(--green); }
+    .legend .log-legend i { background: var(--amber); }
+    .legend .pull-legend i { background: var(--violet); }
+
+    .footnote {
+      margin: 13px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 800px) {
+      main { padding: 22px 12px 30px; }
+      header { align-items: start; flex-direction: column; }
+      .controls { width: 100%; }
+      .controls button { flex: 1; }
+      .diagram-wrap { overflow-x: auto; padding: 8px 8px 0; }
+      svg.diagram { width: 920px; max-width: none; }
+      .data-panels { grid-template-columns: 1fr; padding: 12px; }
+      .pseudo-panels { grid-template-columns: 1fr; padding: 0 12px 12px; }
+      .sequence-panel { margin: 0 12px 12px; }
+      pre { min-height: 100px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Stock operations · dataflow</p>
+        <h1>Two devices sync after working offline</h1>
+        <p class="intro">Each phone saves its operation locally first. When both reconnect, the backend serializes the writes into one group log, then each phone pulls the ordered log and advances its cursor.</p>
+      </div>
+      <nav class="controls" aria-label="Animation controls">
+        <button id="restart" type="button" title="Restart animation">Restart</button>
+        <button id="previous" type="button" title="Previous step">← Back</button>
+        <button id="play" class="primary" type="button" title="Play animation">▶ Play</button>
+        <button id="next" type="button" title="Next step">Next →</button>
+      </nav>
+    </header>
+
+    <section class="frame" aria-label="Mobile and backend sync animation">
+      <div class="stage-head" aria-live="polite">
+        <div id="step-count" class="step-count">01</div>
+        <div class="stage-copy">
+          <p id="stage-title" class="stage-title">Operations are saved while offline</p>
+          <p id="stage-note" class="stage-note">The outbox is durable; neither phone has reached the backend yet.</p>
+        </div>
+      </div>
+      <div class="progress"><span id="progress-fill"></span></div>
+
+      <div class="diagram-wrap">
+        <svg class="diagram" viewBox="0 0 1120 440" role="img" aria-label="Two mobile devices send stock operations to the backend, which stores an ordered log and returns operations during pull">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#aebbb2"></path>
+            </marker>
+          </defs>
+
+          <text class="lane-label" x="38" y="28">MOBILE CLIENTS</text>
+          <text class="lane-label" x="412" y="115">API + TRANSACTION</text>
+          <text class="lane-label" x="790" y="115">GROUP DATA</text>
+
+          <path id="route-apush" class="route" d="M325 143 C365 143 370 197 405 197"></path>
+          <path id="route-bpush" class="route" d="M325 352 C365 352 370 262 405 262"></path>
+          <path id="route-write" class="route" d="M715 220 L785 220"></path>
+          <path id="route-acka" class="route" d="M405 183 C365 160 365 143 325 143"></path>
+          <path id="route-ackb" class="route" d="M405 276 C365 314 365 352 325 352"></path>
+          <path id="route-pulla" class="route pull" d="M785 180 C690 35 485 30 325 154"></path>
+          <path id="route-pullb" class="route pull" d="M785 278 C690 420 485 425 325 342"></path>
+
+          <text id="label-apush" class="flow-label" x="337" y="116">POST · deviceSeq 1</text>
+          <text id="label-bpush" class="flow-label" x="337" y="384">POST · deviceSeq 1</text>
+          <text id="label-write" class="flow-label" x="725" y="205">commit</text>
+          <text id="label-pulla" class="flow-label" x="475" y="47">GET after=0</text>
+          <text id="label-pullb" class="flow-label" x="475" y="414">GET after=0</text>
+
+          <g id="device-a">
+            <rect id="node-a" class="node mobile" x="35" y="58" width="290" height="170" rx="16"></rect>
+            <rect class="node-pill" x="54" y="76" width="62" height="22" rx="11"></rect>
+            <text class="node-pill-text" x="85" y="91" text-anchor="middle">PHONE A</text>
+            <text class="node-title" x="54" y="124">Local outbox</text>
+            <text id="a-status" class="node-sub" x="54" y="145">Offline · 1 pending</text>
+            <text id="a-local" class="node-value" x="54" y="179">ball / main  4</text>
+            <text id="a-cursor" class="node-detail" x="54" y="204">lastAppliedSeq  0</text>
+          </g>
+
+          <g id="device-b">
+            <rect id="node-b" class="node mobile" x="35" y="267" width="290" height="170" rx="16"></rect>
+            <rect class="node-pill" x="54" y="285" width="62" height="22" rx="11"></rect>
+            <text class="node-pill-text" x="85" y="300" text-anchor="middle">PHONE B</text>
+            <text class="node-title" x="54" y="333">Local outbox</text>
+            <text id="b-status" class="node-sub" x="54" y="354">Offline · 1 pending</text>
+            <text id="b-local" class="node-value" x="54" y="388">ball / main  5</text>
+            <text id="b-cursor" class="node-detail" x="54" y="413">lastAppliedSeq  0</text>
+          </g>
+
+          <g id="backend">
+            <rect id="node-backend" class="node backend" x="405" y="145" width="310" height="160" rx="16"></rect>
+            <rect class="backend-pill" x="425" y="164" width="94" height="22" rx="11"></rect>
+            <text class="backend-pill-text" x="472" y="179" text-anchor="middle">AUTH + GROUP</text>
+            <text class="node-title" x="425" y="215">Stock API</text>
+            <text id="backend-stock" class="node-value" x="425" y="248">onHand  0</text>
+            <text id="backend-head" class="node-detail" x="425" y="275">group latestSeq  0</text>
+          </g>
+
+          <g id="group-log">
+            <rect id="node-log" class="node log" x="785" y="145" width="300" height="160" rx="16"></rect>
+            <rect class="log-pill" x="805" y="164" width="88" height="22" rx="11"></rect>
+            <text class="log-pill-text" x="849" y="179" text-anchor="middle">DURABLE LOG</text>
+            <text class="node-title" x="805" y="215">stock_op</text>
+            <text id="log-row-1" class="log-row" x="805" y="244">— no operations —</text>
+            <text id="log-row-2" class="log-row" x="805" y="267"></text>
+            <text id="log-row-3" class="log-row" x="805" y="289"></text>
+          </g>
+
+          <circle id="packet" class="packet" r="7" cx="0" cy="0"></circle>
+        </svg>
+      </div>
+
+      <div class="data-panels">
+        <section class="data-panel" aria-label="Request or local queue data">
+          <header><h2 id="request-heading">Local queue</h2><span id="request-tag" class="tag">OFFLINE</span></header>
+          <pre id="request-json"></pre>
+        </section>
+        <section class="data-panel" aria-label="Backend response data">
+          <header><h2 id="response-heading">Backend response</h2><span id="response-tag" class="tag">NO REQUEST</span></header>
+          <pre id="response-json"></pre>
+        </section>
+      </div>
+
+      <section class="sequence-panel" aria-label="Sequence values across the sync flow">
+        <header>
+          <h2>Sequence values</h2>
+          <span class="tag">CURRENT ANIMATION STEP</span>
+        </header>
+        <div class="sequence-scroll">
+          <table class="sequence-table">
+            <thead><tr><th>Value</th><th>At this step</th><th>How it changes</th></tr></thead>
+            <tbody>
+              <tr><td>deviceSeq</td><td id="seq-device-op"></td><td>Per-device operation number; each phone's first operation is 1.</td></tr>
+              <tr><td>expectedDeviceSeq</td><td id="seq-device-expected"></td><td>Backend check: last_device_seq + 1 for that device.</td></tr>
+              <tr><td>nextDeviceSeq</td><td id="seq-device-next"></td><td>Allocated locally with the outbox item; advances from 1 to 2.</td></tr>
+              <tr><td>last_device_seq</td><td id="seq-device-accepted"></td><td>Backend's last accepted operation number for each device.</td></tr>
+              <tr><td>baseSeq</td><td id="seq-base"></td><td>Group cursor captured when each offline operation was queued.</td></tr>
+              <tr><td>seq</td><td id="seq-op"></td><td>Backend-assigned position of each accepted operation in the group log.</td></tr>
+              <tr><td>stock_counter.next_seq</td><td id="seq-next-group"></td><td>Next group sequence to allocate; increments in the commit transaction.</td></tr>
+              <tr><td>latestSeq</td><td id="seq-latest"></td><td>Server's group log head, reported with push and pull responses.</td></tr>
+              <tr><td>lastAppliedSeq</td><td id="seq-applied"></td><td>Each phone's durable pull cursor; advances only as ordered ops are applied.</td></tr>
+              <tr><td>after → nextAfter</td><td id="seq-pull"></td><td>Pull starts after the saved cursor; nextAfter is the last sequence in that page.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="pseudo-panels" aria-label="Synchronized client and server pseudocode">
+        <section class="pseudo-panel" aria-label="Mobile client pseudocode">
+          <header><h2>Mobile client</h2><span class="tag">LOCAL OUTBOX + CURSOR</span></header>
+          <div class="code-lines" role="region" aria-label="Mobile sync pseudocode" tabindex="0">
+            <code>
+<span class="code-line" data-code="mobile:record">function recordOffline(op):</span>
+<span class="code-line" data-code="mobile:record">  transaction:</span>
+<span class="code-line" data-code="mobile:record">    request = { opId: uuid(), deviceId, deviceSeq, baseSeq: lastAppliedSeq, op }</span>
+<span class="code-line" data-code="mobile:record">    outbox.append(request); deviceSeq += 1</span>
+<span class="code-line" data-code="mobile:record">    applyOptimistically(op)</span>
+<span class="code-line"> </span>
+<span class="code-line" data-code="mobile:sync">async function sync():</span>
+<span class="code-line" data-code="mobile:sync">  await pullUntilCaughtUp()</span>
+<span class="code-line" data-code="mobile:pushSend">  for request in outbox.sortedBy(deviceSeq):</span>
+<span class="code-line" data-code="mobile:pushSend">    response = await POST("/api/stock/ops", request)</span>
+<span class="code-line" data-code="mobile:pushAck">    if response.ok: remove request from outbox</span>
+<span class="code-line" data-code="mobile:pushRetry">    if timeout: retry same opId, deviceSeq, and body</span>
+<span class="code-line" data-code="mobile:sync">  await pullUntilCaughtUp()</span>
+<span class="code-line"> </span>
+<span class="code-line" data-code="mobile:pullRequest">async function pullUntilCaughtUp():</span>
+<span class="code-line" data-code="mobile:pullRequest">  page = GET("/api/stock/ops?after=" + lastAppliedSeq)</span>
+<span class="code-line" data-code="mobile:pullApply">  transaction:</span>
+<span class="code-line" data-code="mobile:pullApply">    for op in page.ops ordered by seq: apply(op)</span>
+<span class="code-line" data-code="mobile:pullApply">    persist inventory and page.nextAfter together</span>
+<span class="code-line" data-code="mobile:pullApply">  if page.hasMore: request next page</span>
+            </code>
+          </div>
+        </section>
+        <section class="pseudo-panel" aria-label="Backend pseudocode">
+          <header><h2>Backend</h2><span class="tag">VALIDATE + SEQUENCE + LOG</span></header>
+          <div class="code-lines" role="region" aria-label="Backend stock API pseudocode" tabindex="0">
+            <code>
+<span class="code-line" data-code="backend:postAuthorize">POST /api/stock/ops:</span>
+<span class="code-line" data-code="backend:postAuthorize">  authenticate; authorize group membership</span>
+<span class="code-line" data-code="backend:postValidate">  validate schema and operation fields</span>
+<span class="code-line" data-code="backend:postDedupe">  if opId already exists: return saved result + latestSeq</span>
+<span class="code-line" data-code="backend:txStart">  transaction; lock group sequence counter</span>
+<span class="code-line" data-code="backend:checkDevice">  require deviceSeq == lastDeviceSeq + 1</span>
+<span class="code-line" data-code="backend:checkDevice">  require baseSeq &lt;= current group sequence</span>
+<span class="code-line" data-code="backend:lockPosition">  lock affected stock positions</span>
+<span class="code-line" data-code="backend:countCheck">  if count.expected differs: rollback; return 409</span>
+<span class="code-line" data-code="backend:apply">  apply event to current onHand</span>
+<span class="code-line" data-code="backend:commit">  assign seq; persist op, snapshot, and deviceSeq</span>
+<span class="code-line" data-code="backend:commit">  commit transaction</span>
+<span class="code-line" data-code="backend:postReturn">  return { seq, latestSeq, onHand }</span>
+<span class="code-line"> </span>
+<span class="code-line" data-code="backend:getAuthorize">GET /api/stock/ops?after=n:</span>
+<span class="code-line" data-code="backend:getAuthorize">  authenticate; authorize group membership</span>
+<span class="code-line" data-code="backend:getRead">  latestSeq = current group sequence</span>
+<span class="code-line" data-code="backend:getRead">  read ordered ops where n &lt; seq &lt;= latestSeq, limit 500</span>
+<span class="code-line" data-code="backend:getResponse">  return ops, nextAfter, hasMore, latestSeq</span>
+            </code>
+          </div>
+        </section>
+      </div>
+
+      <div class="legend" aria-label="Diagram legend">
+        <span><i></i>mobile local state</span>
+        <span class="server"><i></i>backend transaction</span>
+        <span class="log-legend"><i></i>group operation log</span>
+        <span class="pull-legend"><i></i>pull response</span>
+      </div>
+    </section>
+
+    <p class="footnote">The example uses two queued receives: +4 and +5. The backend assigns group sequences 1 and 2; both phones pull the ordered log and finish at 9 on hand. Auth headers are omitted from the JSON panels.</p>
+  </main>
+
+  <script>
+    const A = {
+      deviceId: "f07bdbbf-79a3-41c3-a54f-a6b48f445d27",
+      deviceSeq: 1,
+      baseSeq: 0,
+      op: {
+        opId: "be40a038-8f80-49da-94fa-50c12704b119",
+        v: 1,
+        type: "receive",
+        at: 1792333176805,
+        productId: "ball",
+        storageId: "main",
+        quantity: 4
+      }
+    };
+    const B = {
+      deviceId: "d295cbf5-7f9c-46a8-9459-de89f934d0d5",
+      deviceSeq: 1,
+      baseSeq: 0,
+      op: {
+        opId: "40a585d4-53e9-417f-9f85-0fb914237fe5",
+        v: 1,
+        type: "receive",
+        at: 1792333176805,
+        productId: "ball",
+        storageId: "main",
+        quantity: 5
+      }
+    };
+
+    const opA = {
+      seq: 1,
+      opId: A.op.opId,
+      deviceId: A.deviceId,
+      type: "receive",
+      at: A.op.at,
+      result: "accepted",
+      payload: { productId: "ball", storageId: "main", quantity: 4 },
+      onHand: [{ productId: "ball", storageId: "main", quantity: 4 }]
+    };
+    const opB = {
+      seq: 2,
+      opId: B.op.opId,
+      deviceId: B.deviceId,
+      type: "receive",
+      at: B.op.at,
+      result: "accepted",
+      payload: { productId: "ball", storageId: "main", quantity: 5 },
+      onHand: [{ productId: "ball", storageId: "main", quantity: 9 }]
+    };
+
+    const responseA = {
+      seq: opA.seq,
+      latestSeq: 1,
+      opId: opA.opId,
+      deviceId: opA.deviceId,
+      type: opA.type,
+      at: opA.at,
+      result: opA.result,
+      onHand: opA.onHand
+    };
+    const responseB = {
+      seq: opB.seq,
+      latestSeq: 2,
+      opId: opB.opId,
+      deviceId: opB.deviceId,
+      type: opB.type,
+      at: opB.at,
+      result: opB.result,
+      onHand: opB.onHand
+    };
+    const pullResponse = {
+      timestamp: 1792333178333,
+      latestSeq: 2,
+      nextAfter: 2,
+      hasMore: false,
+      ops: [opA, opB]
+    };
+    const emptyPull = {
+      timestamp: 1792333176000,
+      latestSeq: 0,
+      nextAfter: 0,
+      hasMore: false,
+      ops: []
+    };
+
+    const stages = [
+      {
+        title: "Both phones save locally while offline",
+        note: "Each operation is durable in its own outbox; the group cursor is still 0.",
+        aStatus: "Offline · 1 pending",
+        bStatus: "Offline · 1 pending",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 0, stock: 0, log: 0,
+        mobileCode: ["record"], backendCode: [],
+        requestTitle: "Local outboxes", requestTag: "NO NETWORK",
+        request: { phoneA: A, phoneB: B },
+        responseTitle: "No backend response", responseTag: "OFFLINE",
+        response: { note: "Both operations are queued locally. No server sequence has been assigned yet." }
+      },
+      {
+        title: "Phone A pulls before pushing its outbox",
+        note: "Phone A asks for operations after cursor 0; the group log is empty.",
+        aStatus: "Online · ready to sync", bStatus: "Online · ready to sync",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 0, stock: 0, log: 0,
+        mobileCode: ["pullRequest", "pullApply"], backendCode: ["getAuthorize", "getRead", "getResponse"],
+        routes: ["route-pulla"], packetRoute: "route-pulla", packetPull: true, pullALabel: "GET after=0 · empty",
+        requestTitle: "Pull request", requestTag: "GET · after=0",
+        request: { method: "GET", path: "/api/stock/ops?after=0" },
+        responseTitle: "Pull response", responseTag: "200 · EMPTY",
+        response: emptyPull
+      },
+      {
+        title: "Phone B pulls before pushing its outbox",
+        note: "Phone B also starts at cursor 0; both devices have the same empty server baseline.",
+        aStatus: "Online · ready to sync", bStatus: "Online · ready to sync",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 0, stock: 0, log: 0,
+        mobileCode: ["pullRequest", "pullApply"], backendCode: ["getAuthorize", "getRead", "getResponse"],
+        routes: ["route-pullb"], packetRoute: "route-pullb", packetPull: true, pullBLabel: "GET after=0 · empty",
+        requestTitle: "Pull request", requestTag: "GET · after=0",
+        request: { method: "GET", path: "/api/stock/ops?after=0" },
+        responseTitle: "Pull response", responseTag: "200 · EMPTY",
+        response: emptyPull
+      },
+      {
+        title: "Phone A pushes its queued receive",
+        note: "The request keeps its opId and deviceSeq so it can be retried safely.",
+        aStatus: "Syncing · POST", bStatus: "Online · queued",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 0, stock: 0, log: 0,
+        mobileCode: ["pushSend", "pushRetry"], backendCode: ["postAuthorize", "postValidate", "postDedupe"],
+        routes: ["route-apush"], packetRoute: "route-apush",
+        requestTitle: "Phone A request", requestTag: "POST · /api/stock/ops", request: A,
+        responseTitle: "Waiting for backend", responseTag: "REQUEST IN FLIGHT",
+        response: { note: "Backend validates membership, idempotency, and deviceSeq before applying the operation." }
+      },
+      {
+        title: "Backend commits Phone A as group sequence 1",
+        note: "The group counter is locked; current on hand 0 plus receive 4 becomes 4.",
+        aStatus: "Awaiting acknowledgment", bStatus: "Online · queued",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 1, stock: 4, log: 1,
+        mobileCode: ["pushSend"], backendCode: ["txStart", "checkDevice", "lockPosition", "apply", "commit"],
+        routes: ["route-write"], packetRoute: "route-write",
+        requestTitle: "Accepted operation", requestTag: "TRANSACTION",
+        request: { seq: 1, event: "receive +4", currentOnHand: 0 },
+        responseTitle: "Persisted state", responseTag: "COMMIT",
+        response: { groupLatestSeq: 1, onHand: [{ productId: "ball", storageId: "main", quantity: 4 }] }
+      },
+      {
+        title: "Phone A receives its acknowledgment",
+        note: "The outbox item is acknowledged; latestSeq is the server head at this point.",
+        aStatus: "Online · outbox clear", bStatus: "Online · queued",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 1, stock: 4, log: 1,
+        mobileCode: ["pushAck"], backendCode: ["postReturn"],
+        routes: ["route-acka"], packetRoute: "route-acka",
+        requestTitle: "Acknowledged op", requestTag: "SEQ 1",
+        request: A,
+        responseTitle: "Push response", responseTag: "200 OK",
+        response: responseA
+      },
+      {
+        title: "Phone B pushes while its baseSeq is still 0",
+        note: "Its offline receive is additive, so the backend applies it to current on hand 4.",
+        aStatus: "Online · needs pull", bStatus: "Syncing · POST",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 1, stock: 4, log: 1,
+        mobileCode: ["pushSend", "pushRetry"], backendCode: ["postAuthorize", "postValidate", "postDedupe"],
+        routes: ["route-bpush"], packetRoute: "route-bpush",
+        requestTitle: "Phone B request", requestTag: "POST · /api/stock/ops", request: B,
+        responseTitle: "Waiting for backend", responseTag: "REQUEST IN FLIGHT",
+        response: { note: "baseSeq may be stale; it cannot be ahead of the server head. deviceSeq is per device." }
+      },
+      {
+        title: "Backend commits Phone B as group sequence 2",
+        note: "The server applies receive 5 to the latest quantity 4, producing 9 on hand.",
+        aStatus: "Online · needs pull", bStatus: "Awaiting acknowledgment",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 2, stock: 9, log: 2,
+        mobileCode: ["pushSend"], backendCode: ["txStart", "checkDevice", "lockPosition", "apply", "commit"],
+        routes: ["route-write"], packetRoute: "route-write",
+        requestTitle: "Accepted operation", requestTag: "TRANSACTION",
+        request: { seq: 2, event: "receive +5", currentOnHand: 4 },
+        responseTitle: "Persisted state", responseTag: "COMMIT",
+        response: { groupLatestSeq: 2, onHand: [{ productId: "ball", storageId: "main", quantity: 9 }] }
+      },
+      {
+        title: "Phone B receives its acknowledgment",
+        note: "Its push response says latestSeq 2, so it knows the group has reached sequence 2.",
+        aStatus: "Online · needs pull", bStatus: "Online · outbox clear",
+        aLocal: 4, bLocal: 5, aCursor: 0, bCursor: 0, head: 2, stock: 9, log: 2,
+        mobileCode: ["pushAck"], backendCode: ["postReturn"],
+        routes: ["route-ackb"], packetRoute: "route-ackb",
+        requestTitle: "Acknowledged op", requestTag: "SEQ 2",
+        request: B,
+        responseTitle: "Push response", responseTag: "200 OK",
+        response: responseB
+      },
+      {
+        title: "Phone A pulls both committed operations",
+        note: "It pulls after its last applied sequence 0 and applies seq 1 then seq 2.",
+        aStatus: "Pulling · after 0", bStatus: "Online · needs pull",
+        aLocal: 9, bLocal: 5, aCursor: 2, bCursor: 0, head: 2, stock: 9, log: 2,
+        mobileCode: ["pullRequest", "pullApply"], backendCode: ["getAuthorize", "getRead", "getResponse"],
+        routes: ["route-pulla"], packetRoute: "route-pulla", packetPull: true, pullALabel: "GET after=0 · 2 ops",
+        requestTitle: "Phone A pull", requestTag: "GET · after=0",
+        request: { method: "GET", path: "/api/stock/ops?after=0" },
+        responseTitle: "Pull response", responseTag: "200 · 2 OPS",
+        response: pullResponse
+      },
+      {
+        title: "Phone B pulls the same ordered log",
+        note: "Both clients now show 9 on hand and have persisted lastAppliedSeq 2.",
+        aStatus: "Synced · cursor 2", bStatus: "Pulling · after 0",
+        aLocal: 9, bLocal: 9, aCursor: 2, bCursor: 2, head: 2, stock: 9, log: 2,
+        mobileCode: ["pullRequest", "pullApply"], backendCode: ["getAuthorize", "getRead", "getResponse"],
+        routes: ["route-pullb"], packetRoute: "route-pullb", packetPull: true, pullBLabel: "GET after=0 · 2 ops",
+        requestTitle: "Phone B pull", requestTag: "GET · after=0",
+        request: { method: "GET", path: "/api/stock/ops?after=0" },
+        responseTitle: "Pull response", responseTag: "200 · 2 OPS",
+        response: pullResponse
+      }
+    ];
+
+    let index = 0;
+    let playing = false;
+    let timer = null;
+    let animationFrame = null;
+    const stepDuration = 2100;
+    const packet = document.getElementById("packet");
+    const routeIds = ["route-apush", "route-bpush", "route-write", "route-acka", "route-ackb", "route-pulla", "route-pullb"];
+
+    function setText(id, value) { document.getElementById(id).textContent = value; }
+    function pretty(value) { return JSON.stringify(value, null, 2); }
+
+    function updateDiagram(stage) {
+      setText("a-status", stage.aStatus);
+      setText("b-status", stage.bStatus);
+      setText("a-local", `ball / main  ${stage.aLocal}`);
+      setText("b-local", `ball / main  ${stage.bLocal}`);
+      setText("a-cursor", `lastAppliedSeq  ${stage.aCursor}`);
+      setText("b-cursor", `lastAppliedSeq  ${stage.bCursor}`);
+      setText("backend-stock", `onHand  ${stage.stock}`);
+      setText("backend-head", `group latestSeq  ${stage.head}`);
+      setText("log-row-1", stage.log >= 1 ? "seq 1  ·  receive +4  ·  onHand 4" : "— no operations —");
+      setText("log-row-2", stage.log >= 2 ? "seq 2  ·  receive +5  ·  onHand 9" : "");
+      setText("log-row-3", stage.log >= 2 ? "cursor target  ·  latestSeq 2" : "");
+      setText("label-pulla", stage.pullALabel ?? "GET after=0");
+      setText("label-pullb", stage.pullBLabel ?? "GET after=0");
+
+      const aActive = stage.aStatus.includes("Syncing") || stage.aStatus.includes("Awaiting") || stage.aStatus.includes("Pulling");
+      const bActive = stage.bStatus.includes("Syncing") || stage.bStatus.includes("Awaiting") || stage.bStatus.includes("Pulling");
+      document.getElementById("node-a").setAttribute("class", `node mobile${aActive ? " active-mobile" : ""}`);
+      document.getElementById("node-b").setAttribute("class", `node mobile${bActive ? " active-mobile" : ""}`);
+      document.getElementById("node-backend").setAttribute("class", `node backend${stage.routes?.includes("route-write") || stage.routes?.some((r) => r.includes("push")) ? " active-backend" : ""}`);
+      document.getElementById("node-log").setAttribute("class", `node log${stage.log > 0 ? " active-log" : ""}`);
+    }
+
+    function updateSequenceValues() {
+      const groupHead = index >= 7 ? 2 : index >= 4 ? 1 : 0;
+      const acceptedA = index >= 4 ? 1 : 0;
+      const acceptedB = index >= 7 ? 1 : 0;
+      const appliedA = index >= 9 ? 2 : 0;
+      const appliedB = index >= 10 ? 2 : 0;
+      const pullAfter = [1, 2, 9, 10].includes(index) ? 0 : "—";
+      const nextAfter = index === 1 || index === 2 ? 0 : index >= 9 ? 2 : "—";
+      setText("seq-device-op", "Phone A 1 · Phone B 1");
+      setText("seq-device-expected", "Phone A 1 · Phone B 1");
+      setText("seq-device-next", "Phone A 2 · Phone B 2");
+      setText("seq-device-accepted", `Phone A ${acceptedA} · Phone B ${acceptedB}`);
+      setText("seq-base", "Phone A 0 · Phone B 0");
+      setText("seq-op", `Phone A ${acceptedA ? 1 : "—"} · Phone B ${acceptedB ? 2 : "—"}`);
+      setText("seq-next-group", `${groupHead + 1}${groupHead < 2 ? `  (after commit → ${groupHead + 2})` : "  (next allocation)"}`);
+      setText("seq-latest", `${groupHead}  (0 → 1 → 2)`);
+      setText("seq-applied", `Phone A ${appliedA} · Phone B ${appliedB}`);
+      setText("seq-pull", `after ${pullAfter} → nextAfter ${nextAfter}`);
+    }
+
+    function stopPacket() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+      packet.classList.remove("visible", "pull-packet");
+    }
+
+    function animatePacket(stage) {
+      stopPacket();
+      if (!stage.packetRoute) return;
+      const route = document.getElementById(stage.packetRoute);
+      route.classList.add("active");
+      packet.classList.add("visible");
+      if (stage.packetPull) packet.classList.add("pull-packet");
+      const length = route.getTotalLength();
+      const start = performance.now();
+      const duration = 1100;
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const point = route.getPointAtLength(progress * length);
+        packet.setAttribute("cx", point.x);
+        packet.setAttribute("cy", point.y);
+        if (progress < 1) animationFrame = requestAnimationFrame(tick);
+        else animationFrame = null;
+      }
+      animationFrame = requestAnimationFrame(tick);
+    }
+
+    function render() {
+      const stage = stages[index];
+      stopPacket();
+      for (const id of routeIds) document.getElementById(id).classList.remove("active");
+      setText("step-count", `${String(index + 1).padStart(2, "0")}`);
+      setText("stage-title", stage.title);
+      setText("stage-note", stage.note);
+      setText("request-heading", stage.requestTitle);
+      setText("request-tag", stage.requestTag);
+      setText("response-heading", stage.responseTitle);
+      setText("response-tag", stage.responseTag);
+      document.getElementById("request-json").textContent = pretty(stage.request);
+      document.getElementById("response-json").textContent = pretty(stage.response);
+      document.querySelectorAll(".code-line").forEach((line) => {
+        line.classList.remove("active-mobile", "active-backend");
+        const [side, key] = line.dataset.code?.split(":") ?? [];
+        if (side === "mobile" && stage.mobileCode?.includes(key)) line.classList.add("active-mobile");
+        if (side === "backend" && stage.backendCode?.includes(key)) line.classList.add("active-backend");
+      });
+      updateSequenceValues();
+      document.getElementById("progress-fill").style.width = `${((index + 1) / stages.length) * 100}%`;
+      updateDiagram(stage);
+      animatePacket(stage);
+      document.getElementById("previous").disabled = index === 0;
+      document.getElementById("next").disabled = index === stages.length - 1;
+    }
+
+    function pause() {
+      playing = false;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      setText("play", "▶ Play");
+      document.getElementById("play").setAttribute("aria-label", "Play animation");
+    }
+
+    function advance() {
+      if (index >= stages.length - 1) {
+        pause();
+        return;
+      }
+      index += 1;
+      render();
+      if (playing) timer = setTimeout(advance, stepDuration);
+    }
+
+    document.getElementById("play").addEventListener("click", () => {
+      if (playing) {
+        pause();
+        return;
+      }
+      if (index === stages.length - 1) index = 0;
+      playing = true;
+      setText("play", "Ⅱ Pause");
+      document.getElementById("play").setAttribute("aria-label", "Pause animation");
+      render();
+      timer = setTimeout(advance, stepDuration);
+    });
+    document.getElementById("next").addEventListener("click", () => { pause(); advance(); });
+    document.getElementById("previous").addEventListener("click", () => { pause(); index = Math.max(0, index - 1); render(); });
+    document.getElementById("restart").addEventListener("click", () => { pause(); index = 0; render(); });
+
+    render();
+  </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ import { uploadFile } from '../services/FileService';
 import { acceptLegal, clientIp, getLatestLegalAcceptance } from '../services/LegalService';
 import { getKeyValues, putKeyValues } from '../services/KeyValueService';
 import { syncRecords } from '../services/RecordService';
+import { pullStockOps, pushStockOp } from '../services/StockService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
 import { ChatRequestSchema, CreateGroupRequestSchema, JoinGroupRequestSchema, PatchGroupRequestSchema, PatchMemberRoleRequestSchema } from '../types/schemas';
@@ -175,6 +176,10 @@ export const getAuthenticatedRouter = (): Router => {
             res.json(node);
         }),
     );
+
+    router.post('/stock/ops', apiHandler(async (req) => pushStockOp(req.ctx, req.body)));
+
+    router.get('/stock/ops', apiHandler(async (req) => pullStockOps(req.ctx, req.query)));
 
     router.put(
         '/record/sync',

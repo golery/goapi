@@ -103,4 +103,67 @@ export const ChatRequestSchema = z.object({
     nodeTree: z.array(z.number()).optional(),
 });
 
+const stockId = z.string().trim().min(1).max(200);
+const stockQty = z.number().positive().finite();
+
+const stockReceive = z.object({
+    opId: z.string().uuid(),
+    v: z.literal(1),
+    type: z.literal('receive'),
+    at: z.number().int(),
+    productId: stockId,
+    storageId: stockId,
+    quantity: stockQty,
+});
+
+const stockSell = stockReceive.extend({ type: z.literal('sell') });
+
+const stockMove = z.object({
+    opId: z.string().uuid(),
+    v: z.literal(1),
+    type: z.literal('move'),
+    at: z.number().int(),
+    productId: stockId,
+    fromStorageId: stockId,
+    toStorageId: stockId,
+    quantity: stockQty,
+});
+
+const stockCount = z.object({
+    opId: z.string().uuid(),
+    v: z.literal(1),
+    type: z.literal('count'),
+    at: z.number().int(),
+    storageId: stockId,
+    lines: z.array(z.object({
+        productId: stockId,
+        seen: z.number().nonnegative().finite(),
+        expected: z.number().finite(),
+    })).min(1),
+});
+
+export const StockPushSchema = z.object({
+    deviceId: z.string().uuid(),
+    deviceSeq: z.number().int().positive(),
+    baseSeq: z.number().int().nonnegative(),
+    deviceNow: z.number().int().optional(),
+    op: z.discriminatedUnion('type', [stockReceive, stockSell, stockMove, stockCount]),
+}).superRefine((value, ctx) => {
+    if (value.op.type === 'move' && value.op.fromStorageId === value.op.toStorageId) {
+        ctx.addIssue({ code: 'custom', message: 'fromStorageId and toStorageId must differ' });
+    }
+    if (value.op.type === 'count') {
+        const ids = value.op.lines.map((line) => line.productId);
+        if (new Set(ids).size !== ids.length) {
+            ctx.addIssue({ code: 'custom', message: 'count lines must name each product once' });
+        }
+    }
+});
+
+export const StockPullQuerySchema = z.object({
+    after: z.coerce.number().int().nonnegative().default(0),
+});
+
+export type StockPushRequest = z.infer<typeof StockPushSchema>;
+
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
