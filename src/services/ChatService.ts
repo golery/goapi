@@ -54,7 +54,7 @@ export class ChatService {
         chatHistory?: ChatMessage[],
     ): AsyncGenerator<string> {
         const openai = this.getOpenAI();
-        const llmModel = 'llama-3.3-70b-versatile';
+        const llmModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
         // Format node content
         const nodeContent = this.formatNodeContent(nodes);
