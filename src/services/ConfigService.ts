@@ -21,7 +21,8 @@ export function loadConfig(): Config {
 
     // First, try to load from .env file in project root (if it exists)
     const projectEnvPath = '.env';
-    if (fs.existsSync(projectEnvPath)) {
+    const hasProjectEnv = fs.existsSync(projectEnvPath);
+    if (hasProjectEnv) {
         logger.info(`Load config from ${projectEnvPath}`);
         const result = dotenv.config({ path: projectEnvPath });
         if (result.error) {
@@ -29,34 +30,49 @@ export function loadConfig(): Config {
         }
     }
 
-    // On prod/env.sh is ONLY used at local to hook to prod DB. On real prod, we use environment variable in Koeyb
-    // This will override values from .env if both exist (dotenv.config() by default overrides existing vars)
+    // On prod/env.sh is ONLY used at local to hook to prod DB. On real prod, we use environment variables in Koyeb.
+    // dotenv.config() does not override existing vars, so .env values win when both exist.
     const dotEnvPath = `/workspaces/app-configs/goapi/${isProd() ? 'prod' : 'dev'}/env.sh`;
-    if (fs.existsSync(dotEnvPath)) {
+    const hasSharedEnv = fs.existsSync(dotEnvPath);
+    if (hasSharedEnv) {
         logger.info(`Load config from ${dotEnvPath}`);
         const result = dotenv.config({ path: dotEnvPath });
         if (result.error) {
             logger.error(`Fail to load config from file ${dotEnvPath}`);
         }
-    } else {
-        if (isDev()) {
-            throw new Error(`Config file ${dotEnvPath} not found`);
-        }
+    } else if (isDev() && !hasProjectEnv) {
+        throw new Error(`Config file ${dotEnvPath} not found (and no ${projectEnvPath} present)`);
     }
 
+    // In dev, cloud keys are optional (dummy placeholders disable uploads); in prod they are required.
     const config: Config = {
-        s3Bucket: process.env.S3_BUCKET!,
+        s3Bucket: process.env.S3_BUCKET ?? '',
 
-        // The following vars are not used directly, they are used from process.env, just loaad them for verification
-        awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        awsAccessKeySecret: process.env.AWS_SECRET_ACCESS_KEY!,
-    
+        // The following vars are not used directly, they are used from process.env, just load them for verification
+        awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
+        awsAccessKeySecret: process.env.AWS_SECRET_ACCESS_KEY ?? '',
+
         gcp: {
-            projectId: process.env.GCP_PROJECT_ID!,
-            clientEmail: process.env.GCP_CLIENT_EMAIL!,
-            privateKey: process.env.GCP_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+            projectId: process.env.GCP_PROJECT_ID ?? '',
+            clientEmail: process.env.GCP_CLIENT_EMAIL ?? '',
+            privateKey: (process.env.GCP_PRIVATE_KEY ?? '').replace(/\\n/g, '\n'),
         },
     };
+    if (isProd()) {
+        const required: Record<string, string> = {
+            S3_BUCKET: config.s3Bucket,
+            AWS_ACCESS_KEY_ID: config.awsAccessKeyId,
+            AWS_SECRET_ACCESS_KEY: config.awsAccessKeySecret,
+            GCP_PROJECT_ID: config.gcp.projectId,
+            GCP_CLIENT_EMAIL: config.gcp.clientEmail,
+            GCP_PRIVATE_KEY: config.gcp.privateKey,
+        };
+        for (const [key, value] of Object.entries(required)) {
+            if (!value) {
+                throw new Error(`Missing required env var ${key} in production`);
+            }
+        }
+    }
     logger.info('Loaded config');
     return config;
 }
