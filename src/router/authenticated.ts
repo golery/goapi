@@ -17,7 +17,7 @@ import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
 import { acceptLegal, clientIp, getLatestLegalAcceptance } from '../services/LegalService';
 import { getKeyValues, putKeyValues } from '../services/KeyValueService';
-import { syncRecords } from '../services/RecordService';
+import { fetchDeltaRecords, syncRecords } from '../services/RecordService';
 import { pullStockOps, pushStockOp } from '../services/StockService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
@@ -186,16 +186,33 @@ export const getAuthenticatedRouter = (): Router => {
         apiHandler(async (req) => {
             logger.info(`Syncing records for group ${req.ctx.groupId}`);
             const parsedFromTime = Number.parseInt(
-                (req.query.fromTime as string) ?? '0',
+                (req.query.lastDownloadTime as string) ?? (req.query.fromTime as string) ?? '0',
             );
             const fromTime = isNaN(parsedFromTime) ? 0 : parsedFromTime;
 
             return await syncRecords(
                 req.ctx,
-
                 fromTime,
                 req.body.records,
-                req.query.delete === 'true',
+            );
+        }),
+    );
+
+    router.get(
+        '/record/delta',
+        apiHandler(async (req) => {
+            const table = String(req.query.table ?? '');
+            const parsedSince = Number.parseInt((req.query.since as string) ?? '0');
+            const parsedLimit = Number.parseInt((req.query.limit as string) ?? '200');
+            const after = typeof req.query.after === 'string' && req.query.after !== ''
+                ? req.query.after
+                : undefined;
+            return await fetchDeltaRecords(
+                req.ctx,
+                table,
+                isNaN(parsedSince) ? 0 : parsedSince,
+                isNaN(parsedLimit) ? 200 : parsedLimit,
+                after,
             );
         }),
     );
