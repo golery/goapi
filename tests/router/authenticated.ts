@@ -23,15 +23,21 @@ describe('router/authenticated', () => {
         await closeDb();
     });
     describe('record', () => {
-        it('#sync', async () => {
+        it('#commit then delta', async () => {
             const testUser = await setupUser();
+            const groupId = getRandomInt();
             const random = uuid.v4();
-            const response: any = await sendRequest(testUser, request(app)
-                .put('/api/record/sync')
-                .set(GROUP_ID_HEADER, `${getRandomInt()}`)
-                .send({ records: { test: [{ random }] } }));
-            console.log(response.records.test);
-            const saved = response.records.test.find(o => o.random === random);
+            const commit: any = await sendRequest(testUser, request(app)
+                .put('/api/records')
+                .set(GROUP_ID_HEADER, `${groupId}`)
+                .send({ records: { products: [{ id: random, random }] } }));
+            assert.deepEqual(commit.accepted, { products: 1 });
+
+            const delta: any = await sendRequest(testUser, request(app)
+                .get('/api/records/delta?table=products&since=0&limit=200')
+                .set(GROUP_ID_HEADER, `${groupId}`)
+                .send());
+            const saved = delta.records.find(o => o.id === random);
             assert.deepEqual(_.pick(saved, ['random']), { random });
         });
     });

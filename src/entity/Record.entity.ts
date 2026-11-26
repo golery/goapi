@@ -3,8 +3,10 @@ import * as uuid from 'uuid';
 
 @Entity({ tableName: 'record' })
 export class DataRecord {
-    @PrimaryKey({ type: 'uuid' })
-    id = uuid.v4();
+    // Phone-supplied ids are not always UUIDs (built-in custom field ids
+    // are plain strings like 'expiry-date'), so the column is text.
+    @PrimaryKey({ type: 'text' })
+    id: string = uuid.v4();
 
     @Property({ type: 'jsonb' })
     data = {};

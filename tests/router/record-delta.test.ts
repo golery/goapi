@@ -40,9 +40,9 @@ describe('router/record-delta', () => {
         groupId: number,
         records: Record<string, unknown[]>,
     ) {
-        return sendRequest<{ records: Record<string, any[]>; timestamp: number }>(
+        return sendRequest<{ accepted: Record<string, number>; timestamp: number }>(
             user,
-            authed(user, groupId, request(app).put('/api/record/sync')).send({ records }),
+            authed(user, groupId, request(app).put('/api/records')).send({ records }),
         );
     }
 
@@ -52,7 +52,7 @@ describe('router/record-delta', () => {
         query: string,
         status = 200,
     ) {
-        const res = await authed(user, groupId, request(app).get(`/api/record/delta${query}`))
+        const res = await authed(user, groupId, request(app).get(`/api/records/delta${query}`))
             .expect(status);
         return res.body as { records: any[]; serverTimestamp: number; hasMore: boolean };
     }
@@ -67,7 +67,7 @@ describe('router/record-delta', () => {
 
     it('pages products with the after cursor and never repeats', async () => {
         const { user, groupId } = await setupGroup();
-        // Record ids are uuid columns, so the test uses real uuids.
+        // Record ids are free-form text, so the test uses real uuids.
         const [p1, p2, p3] = [uuid.v4(), uuid.v4(), uuid.v4()];
         await putRecords(user, groupId, {
             products: [
@@ -161,6 +161,6 @@ describe('router/record-delta', () => {
     it('rejects unknown tables and missing groups', async () => {
         const { user, groupId } = await setupGroup();
         await getDelta(user, groupId, '?table=nope&since=0&limit=200', 400);
-        await authed(user, 0, request(app).get('/api/record/delta?table=products&since=0')).expect(400);
+        await authed(user, 0, request(app).get('/api/records/delta?table=products&since=0')).expect(400);
     });
 });

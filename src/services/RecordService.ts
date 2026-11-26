@@ -2,8 +2,7 @@
 
 import { Ctx } from './../types/context.d';
 import { DataRecord } from '../entity/Record.entity';
-import { getEm, orm } from './db';
-import * as _ from 'lodash';
+import { getEm } from './db';
 import logger from '../utils/logger';
 import { ServerError } from '../utils/errors';
 import * as uuid from 'uuid';
@@ -55,78 +54,80 @@ function toSyncRow(record: DataRecord) {
     } as any;
 }
 
-async function fetchRecords(
-    ctx: Ctx,
-    fromTime?: Date,
-): Promise<Record<string, DataRecord[]>> {
-    if (!ctx.groupId) {
-        throw new ServerError(400, 'Failed to fetch records, there is no groupId');
-    }
-    const em = getEm();
-    const records = await em
-        .find(DataRecord, {
-            groupId: ctx.groupId,
-            updatedAt: { $gt: fromTime ?? new Date(0) },
-        })
+/**
+ * Phone tables accepted by the commit endpoint, keyed exactly as the phone
+ * sends them. The delta endpoint maps these storage types back to its own
+ * table names (suppliers + customers -> contacts, customFields ->
+ * field_defs, orders -> order_lines).
+ */
+export const COMMIT_TABLES = [
+    'products',
+    'categories',
+    'transactions',
+    'orders',
+    'suppliers',
+    'customers',
+    'storages',
+    'customFields',
+] as const;
 
-    const dataMap = _.mapValues(_.groupBy(records, 'type'), (value) => {
-        return _.sortBy(value, ['updatedAt']).map(record => toSyncRow(record));
-    });
-    logger.info(
-        `Fetched records from time ${fromTime}. Found ${records.length}`,
-    );
-    return dataMap;
+export type CommitTable = (typeof COMMIT_TABLES)[number];
 
+function isCommitTable(table: string): table is CommitTable {
+    return (COMMIT_TABLES as readonly string[]).includes(table);
 }
 
-async function upsertRecords(
+export interface CommitResult {
+    accepted: Record<string, number>;
+    timestamp: number;
+}
+
+/**
+ * Blind upsert of the phone's dirty rows: the phone always wins, no
+ * timestamp comparison. Rows (including tombstones with `deleted: true`)
+ * are stored verbatim so the delta pull can propagate them.
+ */
+export async function commitRecords(
     ctx: Ctx,
-    recordMap: Record<string, DataRecord[]>,
-) {
-    const records = Object.entries(recordMap).flatMap(([type, data]) => {
-        return data.map((item) => {
+    recordMap: Record<string, unknown[]>,
+): Promise<CommitResult> {
+    if (!ctx.groupId) {
+        throw new ServerError(400, 'Failed to commit records, there is no groupId');
+    }
+    if (recordMap === undefined || recordMap === null || typeof recordMap !== 'object') {
+        throw new ServerError(400, 'Failed to commit records, body.records must be an object');
+    }
+    const accepted: Record<string, number> = {};
+    const records: DataRecord[] = [];
+    for (const [type, items] of Object.entries(recordMap)) {
+        if (!isCommitTable(type)) {
+            throw new ServerError(400, `Unknown commit table ${type}`);
+        }
+        if (!Array.isArray(items)) {
+            throw new ServerError(400, `Invalid records for table ${type}, must be an array`);
+        }
+        accepted[type] = items.length;
+        for (const item of items) {
             const record = new DataRecord();
-            logger.info('MAP' + JSON.stringify(item));
             Object.assign(record, {
-                id: item.id ?? uuid.v4(),
+                id: (item as any)?.id ?? uuid.v4(),
                 data: item,
                 userId: ctx.userId,
                 appId: ctx.appId,
                 groupId: ctx.groupId,
                 type,
             });
-            return record;
-        });
-    });
+            records.push(record);
+        }
+    }
 
     if (records.length > 0) {
         const startTime = Date.now();
-        logger.info(`Upserting ${records.length} records`, { ctx, records });
-
         const em = getEm();
         await em.upsertMany(records);
-        logger.info(`Upserted ${records.length} records in ${Date.now() - startTime}ms`);
+        logger.info(`Committed ${records.length} records in ${Date.now() - startTime}ms`);
     }
-}
-
-export async function syncRecords(
-    ctx: Ctx,
-    fromTime: number,
-    upsert: Record<string, DataRecord[]>,
-): Promise<{ records: Record<string, DataRecord[]>; timestamp: number }> {
-    logger.info(`Syncing records...`);
-    const t1 = Date.now();
-    const t2 = Date.now();
-    if (upsert !== undefined) {
-        logger.debug(`Upserting ${Object.keys(upsert).length} records`, { ctx, upsert });
-        await upsertRecords(ctx, upsert);
-        logger.info(`Upserted records in ${Date.now() - t2}ms`);
-    }
-    const t3 = Date.now();
-    const records = await fetchRecords(ctx, new Date(fromTime));
-    logger.info(`Fetched records in ${Date.now() - t3}ms`);
-    logger.info(`Done.Synced records in ${Date.now() - t1}ms`);
-    return { records, timestamp: Date.now() };
+    return { accepted, timestamp: Date.now() };
 }
 
 /**

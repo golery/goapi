@@ -17,7 +17,7 @@ import { services } from '../services/Factory';
 import { uploadFile } from '../services/FileService';
 import { acceptLegal, clientIp, getLatestLegalAcceptance } from '../services/LegalService';
 import { getKeyValues, putKeyValues } from '../services/KeyValueService';
-import { fetchDeltaRecords, syncRecords } from '../services/RecordService';
+import { commitRecords, fetchDeltaRecords } from '../services/RecordService';
 import { pullStockOps, pushStockOp } from '../services/StockService';
 import { apiHandler } from '../utils/express-utils';
 import logger from '../utils/logger';
@@ -182,24 +182,15 @@ export const getAuthenticatedRouter = (): Router => {
     router.get('/stock/ops', apiHandler(async (req) => pullStockOps(req.ctx, req.query)));
 
     router.put(
-        '/record/sync',
+        '/records',
         apiHandler(async (req) => {
-            logger.info(`Syncing records for group ${req.ctx.groupId}`);
-            const parsedFromTime = Number.parseInt(
-                (req.query.lastDownloadTime as string) ?? (req.query.fromTime as string) ?? '0',
-            );
-            const fromTime = isNaN(parsedFromTime) ? 0 : parsedFromTime;
-
-            return await syncRecords(
-                req.ctx,
-                fromTime,
-                req.body.records,
-            );
+            logger.info(`Committing records for group ${req.ctx.groupId}`);
+            return await commitRecords(req.ctx, req.body?.records);
         }),
     );
 
     router.get(
-        '/record/delta',
+        '/records/delta',
         apiHandler(async (req) => {
             const table = String(req.query.table ?? '');
             const parsedSince = Number.parseInt((req.query.since as string) ?? '0');
